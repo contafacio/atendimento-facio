@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Árvore de decisão · Atendimento Facio</title>
+<style>
+  :root {
+    --header-text: #ffffff;
+    --header-sub: #cfe0f2;
+    --header-border: rgba(0,0,0,0.08);
+    --card-bg: rgba(0,0,0,0.028);
+    --card-hover-bg: rgba(24,95,165,0.07);
+    --border: rgba(0,0,0,0.12);
+    --text-primary: #1f2328;
+    --text-secondary: #4a5160;
+    --text-muted: #7a828e;
+    --accent: #185fa5;
+    --accent-code-bg: rgba(24,95,165,0.1);
+    --accent-text: #0c447c;
+    --radius: 10px;
+  }
+  [data-theme="dark"] {
+    --header-text: #f2f5f8;
+    --header-sub: #a9c6e4;
+    --header-border: rgba(255,255,255,0.1);
+    --card-bg: rgba(255,255,255,0.05);
+    --card-hover-bg: rgba(111,168,224,0.12);
+    --border: rgba(255,255,255,0.16);
+    --text-primary: #eef1f4;
+    --text-secondary: #b7bfc7;
+    --text-muted: #8a929b;
+    --accent: #6fa8e0;
+    --accent-code-bg: rgba(111,168,224,0.16);
+    --accent-text: #cfe4fa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: transparent;
+  }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  header {
+    background: transparent;
+    color: var(--text-primary);
+    padding: 16px 4px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid var(--header-border);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary); }
+  header p { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); }
+  #edit-toggle {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  #edit-toggle:hover { background: var(--card-hover-bg); }
+  #edit-toggle.active { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+  .edit-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 14px; padding: 10px 12px; border-radius: var(--radius);
+    background: var(--card-bg); border: 1px dashed var(--border);
+  }
+  .edit-bar .hint { font-size: 12px; color: var(--text-muted); margin-right: auto; }
+  .icon-btn {
+    padding: 4px 9px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-secondary); cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--card-hover-bg); }
+  .icon-btn.danger:hover { color: #c0392b; border-color: #c0392b; }
+  .opt-row { display: flex; align-items: center; gap: 6px; }
+  .opt-row .opt-btn { flex: 1; }
+  .thread { display: flex; flex-direction: column; gap: 14px; }
+  .qa-block { display: flex; flex-direction: column; gap: 10px; }
+  .bubble-q {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 14px 16px; max-width: 88%;
+  }
+  .bubble-q .q-text { font-weight: 600; font-size: 15px; color: var(--text-primary); margin: 0; }
+  .bubble-info {
+    background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 16px; padding: 14px 16px; font-size: 14px; color: var(--text-primary);
+  }
+  .bubble-info .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .03em; color: var(--accent-text); background: var(--accent-code-bg);
+    padding: 2px 8px; border-radius: 999px; margin-bottom: 8px;
+  }
+  .chosen-wrap { display: flex; justify-content: flex-end; }
+  .chosen-pill {
+    background: var(--accent); color: #ffffff; padding: 8px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; max-width: 80%; text-align: right;
+  }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill-btn {
+    padding: 9px 16px; border-radius: 999px; border: 1px solid var(--accent);
+    background: transparent; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .pill-btn:hover { background: var(--accent-code-bg); }
+  .pill-edit-wrap { display: flex; align-items: center; gap: 4px; }
+  .bottom-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  #search {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+  }
+  #search::placeholder { color: var(--text-muted); }
+  #search:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  #breadcrumb {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    margin-bottom: 14px; font-size: 13px; color: var(--text-muted); min-height: 18px;
+  }
+  #breadcrumb .crumb-link { color: var(--accent); cursor: pointer; }
+  #breadcrumb .crumb-link:hover { text-decoration: underline; }
+  .question { font-size: 16px; font-weight: 600; margin: 0 0 14px; color: var(--text-primary); }
+  .answer-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  .answer-card code {
+    background: var(--accent-code-bg);
+    color: var(--accent-text);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; text-align: left; padding: 13px 16px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; color: var(--text-primary);
+    cursor: pointer; transition: border-color .12s, background .12s;
+  }
+  .opt-btn:hover { border-color: var(--accent); background: var(--card-hover-bg); }
+  .opt-btn .arrow { color: var(--accent); font-weight: 700; }
+  .nav-row { margin-top: 18px; display: flex; gap: 10px; }
+  .nav-btn {
+    padding: 9px 16px; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  }
+  .nav-btn:hover { border-color: var(--text-muted); }
+  .no-results { color: var(--text-muted); font-size: 14px; padding: 8px 2px; }
+  footer { text-align: center; font-size: 12px; color: var(--text-muted); padding: 24px 16px 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Central de apoio · Atendimento Facio</h1>
+    <p>Cadastro, Depósito, Transferência Automática, Bloqueio, Fraude, Inadimplência, Pagamento, Indicação, CT e CF</p>
+  </div>
+  <button id="edit-toggle" onclick="toggleEditMode()">Modo de edição</button>
+</header>
+
+<div class="wrap">
+  <input id="search" type="text" placeholder="Buscar por palavra-chave (ex: exclusão, CAF, salary_terminated)..." />
+  <div id="breadcrumb"></div>
+  <div id="content"></div>
+</div>
+
+<footer>Ferramenta de apoio interna · atualize o conteúdo sempre que o processo mudar</footer>
+
+<script>
+const ORIGINAL_HTML = document.documentElement.outerHTML;
+let editMode = false;
+
+const tree = {
+  root: {
+    q: "Qual processo você quer consultar?",
+    opts: [
+      { label: "Cadastro", to: "cadastro" },
+      { label: "Depósito", to: "deposito" },
+      { label: "Transferência Automática / Pix Inteligente", to: "transferencia" },
+      { label: "Bloqueio e reprovação", to: "bloqueio" },
+      { label: "Suspeita de fraude", to: "fraude" },
+      { label: "Inadimplência", to: "inadimplencia" },
+      { label: "Pagamento", to: "pagamento" },
+      { label: "Indicação", to: "indicacao" },
+      { label: "Crédito do Trabalhador (CT)", to: "ct" },
+      { label: "Crédito Fácil — visão geral e FAQ", to: "cf_info" }
+    ]
+  },
+
+  cadastro: {
+    q: "Cadastro — qual assunto?",
+    opts: [
+      { label: "Dúvidas de cadastro", to: "cad_duvidas" },
+      { label: "Atualização de dados cadastrais", to: "cad_atualizacao" },
+      { label: "Cliente quer trocar o banco", to: "cad_trocabanco" },
+      { label: "Cliente quer excluir o cadastro", to: "cad_exclusao" }
+    ]
+  },
+  cad_duvidas: {
+    q: "Qual dúvida o cliente trouxe?",
+    opts: [
+      { label: "Como funciona", to: "cad_como_funciona" },
+      { label: "Dificuldade em realizar o cadastro", to: "cad_dificuldade" },
+      { label: "Recebe salário em banco não atendido", to: "cad_banco_nao_atendido" },
+      { label: "Como contratar novamente", to: "cad_como_contratar" },
+      { label: "Dúvida sobre produto em aberto", to: "cad_produto_aberto" },
+      { label: "Não recorda ou afirma não ter contratado", to: "cad_nao_recorda" },
+      { label: "Não recebe código de acesso", to: "cad_codigo_acesso" }
+    ]
+  },
+  cad_como_funciona: { a: "Tire as dúvidas do cliente sobre o funcionamento de Antecipação e Crédito Fácil. Se já existe cadastro mas não concluído, explique que é preciso passar pela análise para aprovação antes de contratar.<br><br>A partir de 17/04/2026, clientes novos só são elegíveis a Crédito Fácil." },
+  cad_dificuldade: { a: "Se o cliente está com erro ao finalizar o cadastro (tela de erro da Belvo ou Cumbuca, erro no navegador, não redirecionou para o app do banco), oriente-o a reiniciar o aparelho e tentar novamente pelo Google Chrome." },
+  cad_banco_nao_atendido: { a: "Se o cliente recebe o salário em banco não atendido e pede análise manual, explique que não fazemos análise manual e informe quais bancos não são atendidos." },
+  cad_como_contratar: { a: "Cliente já contratou e quitou antes, mas não sabe como pedir de novo. Instrua a baixar o app da Facio para realizar a nova contratação." },
+  cad_produto_aberto: { a: "Esclareça dúvidas sobre o produto em aberto (vencimento, valor devido, se dá pra alterar a data etc.) e informe que essas informações também ficam disponíveis no app." },
+  cad_nao_recorda: { a: "Verifique se é fraude ou esquecimento. Envie os dados principais: cadastro, solicitação, vencimento, contrato e comprovante de depósito.<br><br>Se o cliente insistir que não fez, tranquilize-o e investigue: siga o artigo de Suspeita de Fraude do Notion, solicite o extrato e verifique se o valor recebido foi repassado a outra pessoa." },
+  cad_codigo_acesso: {
+    q: "O cliente não recebe o código — por qual canal?",
+    opts: [
+      { label: "Ainda não tentou WhatsApp", to: "cad_codigo_whatsapp_orientar" },
+      { label: "Já pediu por WhatsApp e não chega", to: "cad_codigo_whatsapp_nao_chega" }
+    ]
+  },
+  cad_codigo_whatsapp_orientar: { a: "Instrua o cliente a solicitar o código via WhatsApp e envie a imagem de apoio." },
+  cad_codigo_whatsapp_nao_chega: { a: "Confirme se ele realmente solicitou o código via WhatsApp e se está acessando pelo celular (o código não é enviado para PC).<br><br>Se for pelo celular e mesmo assim não chegar, oriente a reiniciar o celular. Se persistir, verifique se o número da Facio foi bloqueado no WhatsApp — isso também impede o envio." },
+
+  cad_atualizacao: {
+    q: "Atualização de dados — o e-mail e o telefone batem com o Open Finance?",
+    opts: [
+      { label: "E-mail e telefone batem com OF", to: "cad_cenario1" },
+      { label: "E-mail bate, telefone não bate", to: "cad_cenario2" },
+      { label: "Nenhum dos dois bate", to: "cad_cenario3" }
+    ]
+  },
+  cad_cenario1: { a: "<b>E-mail via OF:</b> altere diretamente, sem validação adicional, sem direcionar ao app.<br><br><b>Celular via OF:</b> pode atualizar manualmente se o cliente confirmar e estiver ligando pelo número. Se o cliente não estiver ligando pelo número capturado e quiser alteração manual, siga as regras do cenário 2 (sem validação CAF, pois o número já veio do OF).<br><br>TAG: <code>Alteração de dados_OF</code>" },
+  cad_cenario2: {
+    a: "Altere o e-mail direto. Oriente a alteração do número pelo app.<br><br>Se houver dificuldade, a alteração manual exige validação CAF (TAG <code>ant_troca_de_dados</code>):<br><br><b>Opção 1 (preferencial):</b> contate o cliente pelo número que consta no OF. Havendo resposta, siga com a alteração.<br><br><b>Opção 2:</b> se não for possível contato ativo, peça que o cliente entre em contato pelo número que deseja usar e aguarde esse novo contato.<br><br>TAG final: <code>ant_troca_dados_of</code>",
+    opts: [ { label: "O número já está em uso por outro cadastro", to: "cad_cenario2_em_uso" } ]
+  },
+  cad_cenario2_em_uso: {
+    q: "O cadastro que já usa esse número está ativo ou inativo?",
+    opts: [
+      { label: "Cadastro ativo", to: "cad_cenario2_ativo" },
+      { label: "Cadastro inativo", to: "cad_cenario2_inativo" }
+    ]
+  },
+  cad_cenario2_ativo: { a: "Pergunte se o cliente conhece a pessoa vinculada ao número.<br>Se sim: oriente essa pessoa a alterar o número dela para liberar.<br>Se não: solicite que o cliente informe outro número." },
+  cad_cenario2_inativo: { a: "Altere o cadastro inativo, mude o DDD para 01 e salve.<br>Anote para qual ID o número foi cedido.<br>Coloque o ID do cadastro do número liberado em suspeita de fraude.<br>Oriente o cliente a concluir a alteração pelo app." },
+  cad_cenario3: {
+    a: "Direcione para validação via CAF.<br><br>Se aprovado: altere o e-mail e oriente a alteração do número pelo app. Se houver dificuldade, pode alterar manualmente.<br><br>TAG: <code>ant_troca_dados_cliente</code>",
+    opts: [ { label: "O número já está em uso por outro cadastro", to: "cad_cenario3_em_uso" } ]
+  },
+  cad_cenario3_em_uso: {
+    q: "O cadastro que já usa esse número está ativo ou inativo?",
+    opts: [
+      { label: "Cadastro ativo", to: "cad_cenario3_ativo" },
+      { label: "Cadastro inativo", to: "cad_cenario3_inativo" }
+    ]
+  },
+  cad_cenario3_ativo: { a: "Informe que não é possível usar esse número e solicite que o cliente informe outro." },
+  cad_cenario3_inativo: { a: "Altere o cadastro inativo, mude o DDD para 01 e salve.<br>Anote o ID que cedeu o número e marque esse ID em suspeita de fraude.<br>Oriente o cliente a concluir a alteração pelo app." },
+
+  cad_trocabanco: { a: "Antes de tudo, investigue:<br>1. O cadastro foi feito há menos de 7 dias?<br>2. Em qual banco e modalidade de conta o cliente recebe o salário? (conta salário não pode ser cadastrada, pois não conseguimos depositar nela)<br>3. O que o cliente vê ao tentar trocar? Se aparece que a troca já iniciou, confira no Amplitude e peça para aguardar até 24h.<br>4. Há quanto tempo recebe o salário nessa conta? Mínimo de 3 meses é exigido.<br><br><b>Passo a passo para o cliente:</b> acessar o cadastro pelo link ou app, ir em configurações → alterar conta, informar o novo banco e completar os dados pedidos. Depois é direcionado à Belvo para cadastrar a conta nova.<br><br>Se o banco escolhido não localizar renda, o cliente pode tentar outros bancos ainda não testados até localizar renda ou esgotar as opções.<br><br>Depois de trocar com sucesso para uma conta com renda localizada, o cliente fica bloqueado por 7 dias para uma nova troca." },
+
+  cad_exclusao: {
+    q: "Exclusão de cadastro — o que você precisa?",
+    opts: [
+      { label: "Ver se é possível excluir (impedimentos)", to: "cad_exclusao_impedimentos" },
+      { label: "Passo a passo para excluir", to: "cad_exclusao_passoapasso" },
+      { label: "Cliente já pediu 3ª vez", to: "cad_exclusao_terceira" },
+      { label: "Encerramento de conta QI", to: "cad_exclusao_qi" },
+      { label: "Perguntas frequentes", to: "cad_exclusao_faq" }
+    ]
+  },
+  cad_exclusao_impedimentos: { a: "Seguimos a LGPD: quando o cliente pede, devemos excluir, exceto se houver impedimento.<br><br><b>Não é possível excluir quando:</b><br>- Há antecipação em aberto<br>- Há Crédito do Trabalhador ou Crédito Fácil ativo<br>- O contato não é feito pelo número cadastrado<br>- É pedido de exclusão de cadastro de terceiros<br><br>Quando não for possível, informe o motivo e oriente o que o cliente precisa fazer para viabilizar a exclusão." },
+  cad_exclusao_passoapasso: { a: "1. Confirme que não há nenhum impedimento.<br>2. Pergunte o motivo da exclusão.<br>3. Anote no Retool do cliente (campo 'Link de apoio' e comentário com o motivo); categoria 'exclusão/bloqueio'; salve.<br>4. Vá em 'outras ações' → 'excluir dados de usuário'.<br>5. Comunique a exclusão, encerre o atendimento e informe as infos mostradas no Retool antes do cancelamento. Se for conta Pix Inteligente, avise sobre o e-mail de confirmação do cancelamento." },
+  cad_exclusao_terceira: { a: "Quando o cancelamento é a 3ª solicitação:<br>- Indique como suspeita no Retool<br>- Anote que é a terceira solicitação<br>- Exclua o cadastro e informe que não será mais possível contratar com a Facio<br><br>Se depois ele pedir validação para contratar de novo, a validação deve ser negada, pois já foi avisado na 3ª exclusão." },
+  cad_exclusao_qi: { a: "Prazo legal de encerramento: até 30 dias corridos (regra do Bacen). Oriente o cliente a revogar o consentimento do Pix Inteligente separadamente — o encerramento da conta NÃO revoga o consentimento automaticamente.<br><br>Reporte no formulário indicado (disponível também no Bird, macro 'Pedido de encerramento conta QI - Forms').<br><br><b>Reportar quando:</b> há dívida em aberto (a conta QI é encerrada mas o cadastro Facio continua — oriente pagamento via Pix Copia e Cola) ou quando o cliente quer cancelar só a conta QI mantendo o cadastro (explique que não dá, pois o serviço depende da transferência automática).<br><br><b>Não precisa reportar</b> quando o cliente pede exclusão do cadastro Facio e da conta QI sem dívida — nesse caso a conta QI é encerrada automaticamente junto com a exclusão." },
+  cad_exclusao_faq: {
+    q: "Qual pergunta o cliente fez?",
+    opts: [
+      { label: '"Como sei que foi cancelado?"', to: "cad_faq_1" },
+      { label: '"Quero o protocolo do cancelamento"', to: "cad_faq_2" },
+      { label: '"Quero excluir o cadastro de outra pessoa"', to: "cad_faq_3" }
+    ]
+  },
+  cad_faq_1: { a: "Ao abrir o app da Facio, o cliente vai ver que não tem mais acesso ao cadastro por causa do cancelamento, e será solicitada nova análise de crédito." },
+  cad_faq_2: { a: "O protocolo fica disponível no final do atendimento, após a pesquisa de satisfação." },
+  cad_faq_3: { a: "Não é permitido. O cliente só pode solicitar a exclusão do próprio cadastro, nunca de terceiros." },
+
+  deposito: {
+    q: "Depósito — qual assunto?",
+    opts: [
+      { label: "Dúvidas de depósito", to: "dep_duvidas" }
+    ]
+  },
+  dep_duvidas: {
+    q: "O que o cliente quer saber sobre o depósito?",
+    opts: [
+      { label: "Quando será depositado (pediu em 48h)", to: "dep_48h" },
+      { label: "Quando e em qual banco recebeu", to: "dep_quando_banco" }
+    ]
+  },
+  dep_48h: { a: "Essa opção (agendado em 48h) só existe para Antecipação de Salário — não existe para Crédito Fácil, que é sempre instantâneo.<br><br>No Retool, aba Antecipações, confira se está como 'pending' e, na aba depósito, se está 'aguardando'. Veja também a data e hora solicitadas.<br><br>Se o depósito está a até 5h do horário do atendimento: informe o horário e peça para aguardar.<br><br>Se falta mais de 5h: explique que ele não escolheu o depósito instantâneo e ofereça cancelar a antecipação para pedir de novo pelo app já optando pelo instantâneo.<br><br>Atenção: se o status for 'New', não cancele — poste no canal #bug-reports ou #atendimento_b2c pedindo orientação do @seniorops." },
+  dep_quando_banco: { a: "<b>Se for Antecipação:</b> no Retool, aba 'Depósitos', gere o comprovante de transferência e envie ao cliente (tem conta, valor, dia e horário).<br><br><b>Se for Crédito Fácil:</b> aba 'Crédito Fácil', botão 'recibo de depósito', gere e envie o comprovante.<br><br>Dependendo do banco, o cliente pode ter uma conta que desconhece — nesse caso, encaminhe para o suporte do banco identificar a conta.<br><br>Se a informação aparecer destacada em verde, é porque o destino foi uma conta poupança: por padrão priorizamos conta corrente, mas o Open Finance pode retornar a poupança como única opção disponível." },
+
+  transferencia: {
+    q: "Transferência Automática / Pix Inteligente — o que você precisa?",
+    opts: [
+      { label: "Desambiguar o que o cliente quer cancelar", to: "ta_desambiguacao" },
+      { label: "Explicar como funciona a Transferência Automática", to: "ta_explicacao" },
+      { label: "Revogar o Pix Inteligente (o cliente quer parar cobranças)", to: "ta_revogacao" },
+      { label: "Dúvidas sobre uma cobrança específica", to: "ta_cobranca" },
+      { label: "Problemas com a Conta Facio (QI SCD)", to: "ta_conta_problemas" },
+      { label: "Pix avulso enviado por engano para a Conta Facio", to: "ta_pix_avulso" }
+    ]
+  },
+  ta_desambiguacao: {
+    a: "Existem três coisas diferentes que o cliente pode querer encerrar — não confunda:<br><br><b>1. Pix Inteligente</b> — consentimento Open Finance que autoriza a transferência automática entre a conta do cliente e a Conta Facio. O cliente diz algo como 'cancelar o débito automático' ou 'parar as cobranças'. Efeito imediato, por app da Facio, Portal do Iniciador ou app do banco.<br><br><b>2. Conta Facio (QI SCD)</b> — a conta de pagamentos do cliente na QI SCD. O cliente diz 'encerrar a Conta Facio' ou 'fechar a conta na QI Tech'. Reporte via formulário, prazo de até 30 dias corridos.<br><br><b>3. Cadastro Facio</b> — o relacionamento comercial completo com a Facio. O cliente diz 'excluir minha conta', 'sair da Facio' ou 'apagar meus dados'. A exclusão do cadastro encerra automaticamente a Conta Facio ao final do prazo.<br><br>Se a intenção não estiver clara, pergunte: 'Você está querendo (a) parar as cobranças automáticas, (b) encerrar sua Conta Facio mantendo o cadastro, ou (c) sair totalmente da Facio (excluir cadastro + encerrar conta)?'",
+    opts: [
+      { label: "Ele quer parar as cobranças (Pix Inteligente)", to: "ta_revogacao" },
+      { label: "Ele quer encerrar só a Conta Facio", to: "cad_exclusao_qi" },
+      { label: "Ele quer sair de tudo (excluir cadastro)", to: "cad_exclusao" }
+    ]
+  },
+  ta_explicacao: { a: "A Transferência Automática é o nome usado com o cliente para o método de pagamento das ofertas Facio com cobrança automática via Pix. Funciona em duas etapas: (1) a partir do vencimento, o valor devido é transferido da conta autorizada do cliente para a Conta Facio (QI SCD), via Pix Inteligente / Open Finance; (2) a Facio faz um Pix dessa Conta Facio para o detentor dos direitos creditórios, quitando o débito. Para o cliente, só a primeira etapa é visível.<br><br>Nunca usar o termo 'débito automático'. O termo oficial é sempre <b>Transferência Automática</b>.<br><br><b>Frase pronta para o cliente:</b> 'A Transferência Automática não é um débito automático, ela usa uma tecnologia chamada Pix Inteligente, que faz parte do Open Finance, controlado pelo Banco Central. Ela permite transferências automáticas entre duas contas que pertencem a você: a sua conta no banco e a sua Conta Facio na QI SCD. De lá, é feita uma transferência Pix para a Facio, abatendo o saldo devedor automaticamente. Você tem total controle sobre o consentimento via Open Finance e pode revogá-lo quando quiser.'" },
+  ta_revogacao: {
+    a: "O cliente tem direito de revogar o consentimento a qualquer momento, com efeito imediato (Resolução BCB nº 32/2020).<br><br><b>Acolha primeiro, sem condicionar:</b> 'Você pode revogar essa autorização quando quiser. Só uma observação: a Transferência Automática não é débito automático — ela usa o Pix Inteligente para mover saldo entre duas contas suas, via Open Finance.'<br><br>Apresente os 3 canais em paridade — nenhum é preferencial ou 'última instância'. Escolha o canal abaixo conforme a preferência do cliente.",
+    opts: [
+      { label: "Passo a passo pelo App da Facio", to: "ta_revogacao_app" },
+      { label: "Passo a passo pelo Portal do Iniciador", to: "ta_revogacao_portal" },
+      { label: "Passo a passo pelo app do banco do cliente", to: "ta_revogacao_banco" }
+    ]
+  },
+  ta_revogacao_app: { a: "1. Clique na engrenagem no canto superior direito da tela inicial.<br>2. Selecione 'Método de pagamento'.<br>3. Selecione 'Transferência Automática'.<br>4. Acesse 'Configurações do consentimento'.<br>5. Siga as instruções para verificar e revogar o consentimento.<br><br>Não usar prints além da tela do nosso app.<br><br><b>Depois de revogar, reforce:</b> tem efeito imediato (transferências já em andamento podem se concluir); não cancela o contrato — o saldo devedor continua e pode ser cobrado por outros meios (Pix Copia e Cola, Boleto); para contratar novo crédito que dependa do Pix Inteligente, será preciso reautorizar." },
+  ta_revogacao_portal: { a: "Acesso pelo Portal do Iniciador: portal.iniciador.com.br/login, com CPF e dados bancários.<br><br><b>Depois de revogar, reforce:</b> tem efeito imediato (transferências já em andamento podem se concluir); não cancela o contrato — o saldo devedor continua e pode ser cobrado por outros meios (Pix Copia e Cola, Boleto); para contratar novo crédito que dependa do Pix Inteligente, será preciso reautorizar." },
+  ta_revogacao_banco: { a: "No app do banco do cliente: seção de Open Finance / Compartilhamento de Dados / Pagamentos Automáticos.<br><br><b>Depois de revogar, reforce:</b> tem efeito imediato (transferências já em andamento podem se concluir); não cancela o contrato — o saldo devedor continua e pode ser cobrado por outros meios (Pix Copia e Cola, Boleto); para contratar novo crédito que dependa do Pix Inteligente, será preciso reautorizar.<br><br>Atenção: compartilhamento de dados não é a mesma coisa que Pix Inteligente — são autorizações distintas no Open Finance." },
+  ta_cobranca: {
+    q: "Qual é a reclamação do cliente sobre a cobrança?",
+    opts: [
+      { label: "'O dinheiro não era do meu salário'", to: "ta_q1" },
+      { label: "'Quero meu dinheiro de volta'", to: "ta_q2" },
+      { label: "'Eu não autorizei isso'", to: "ta_q3" },
+      { label: "'Não podia descontar só uma parte'", to: "ta_q4" },
+      { label: "'Eu ia pagar em outra data'", to: "ta_q5" },
+      { label: "'Quero cancelar isso'", to: "ta_revogacao" },
+      { label: "'Quero encerrar a conta (sem dívida)'", to: "ta_q7" },
+      { label: "'Quero encerrar a conta (com dívida)'", to: "ta_q8" },
+      { label: "'Vocês mexeram na minha conta'", to: "ta_q9" },
+      { label: "O que nunca dizer nesses atendimentos", to: "ta_nunca_dizer" }
+    ]
+  },
+  ta_q1: { a: "Na Antecipação de Salário, confirme primeiro que a pessoa recebeu seu salário/pagamento. Se recebeu, o valor é devido. Se não recebeu, o valor pode ser estornado. O Pix Inteligente usa o saldo disponível sem diferenciar a origem do dinheiro — vale para qualquer valor que entre na conta a partir do vencimento, como o cliente autorizou ao contratar." },
+  ta_q2: { a: "O valor já foi usado para pagar total ou parcialmente o contrato. Não há estorno, pois o pagamento já foi aplicado — o valor abateu a dívida para evitar encargos por atraso." },
+  ta_q3: { a: "Houve autorização no app do banco via Open Finance, além do aceite na contratação. A cobrança exigiu senha e autenticação no app do banco do cliente — sem isso, a contratação não seria liberada." },
+  ta_q4: { a: "Se não houver saldo total, o sistema cobra o valor disponível. Isso reduz a dívida e os juros passam a incidir só sobre o restante." },
+  ta_q5: { a: "A data de vencimento foi escolhida na contratação. Pagar depois gera multa (2%) + juros moratórios (1% a.m.) + juros remuneratórios contratuais (no Crédito Fácil). A cobrança automática protege o cliente de encargos maiores por atraso." },
+  ta_q7: { a: "O cadastro é excluído e a conta da QI Tech é encerrada em até 30 dias. Um novo cadastro dentro desse prazo cancela o encerramento. Ver processo de encerramento conta QI para o formulário e macros." },
+  ta_q8: { a: "Encerrar a conta não cancela a dívida. Acatamos o encerramento imediatamente (Resolução BCB nº 96/2021) e, depois, oferecemos Pix imediato ou Boleto como serviço — nunca como condição para aceitar o pedido." },
+  ta_q9: { a: "O dinheiro foi movido entre duas contas que pertencem ao próprio cliente: conta autorizada → Conta Facio (QI SCD). Ele mesmo autorizou essa transferência no app do banco, e autorizou a Facio a fazer o Pix da Conta Facio para a Facio ao contratar." },
+  ta_nunca_dizer: { a: "1. Chamar o Pix Inteligente de 'meio de pagamento' — use sempre 'Transferência Automática'.<br>2. Chamar de 'débito automático'.<br>3. Pedir desculpas pela cobrança.<br>4. Dizer que a cobrança foi errada, incorreta, indevida ou inconveniente.<br>5. Falar em devolução.<br>6. Condicionar o cancelamento ao pagamento da dívida.<br>7. Tratar o app da Facio como 'última instância' para revogar o consentimento.<br>8. Atrelar o canal de cancelamento ao 'nível de atrito' do cliente." },
+  ta_conta_problemas: {
+    q: "Qual o status/problema da Conta Facio no Retool?",
+    opts: [
+      { label: "Erro ao processar", to: "ta_cp_erro" },
+      { label: "Conta pendente", to: "ta_cp_pendente" },
+      { label: "Conta reprovada ou negada", to: "ta_cp_reprovada" },
+      { label: "Autorização revogada", to: "ta_cp_revogada" },
+      { label: "Autorização rejeitada", to: "ta_cp_rejeitada" }
+    ]
+  },
+  ta_cp_erro: { a: "O cliente vê a tela 'Erro ao processar'. Solicite que feche o aplicativo, aguarde alguns minutos e tente o processo de configuração novamente." },
+  ta_cp_pendente: { a: "A Conta Facio foi aberta com sucesso na QI Tech, mas o cliente não concluiu a autorização no banco cadastrado. Oriente-o a concluir a autorização. Se o status não mudar, acione @seniorops pelo Slack." },
+  ta_cp_reprovada: { a: "Clientes com abertura de conta reprovada não podem usar os serviços — são considerados de alto risco de inadimplência (aparece como 'Facio bank account rejected' no Retool). Não há retentativa, mesmo após 3 meses. Com o tempo, se o perfil de crédito melhorar, o cliente pode receber uma nova oferta que não dependa da Transferência Automática." },
+  ta_cp_revogada: { a: "A autorização foi revogada no banco cadastrado — não será mais possível realizar transferências via Pix Inteligente até nova autorização." },
+  ta_cp_rejeitada: { a: "O cliente passou pelo fluxo, mas não finalizou a autorização (não concluiu no banco, abandonou até expirar o prazo, erro ao acessar a etapa no banco, ou erro genérico). Oriente a atualizar o app do banco e da Facio, reiniciar o aparelho e tentar novamente pelo link: https://m.facio.com.br/payment/pixInteligente?r=1" },
+  ta_pix_avulso: { a: "1. Solicite o comprovante da transferência.<br>2. Verifique se houve contestação no banco: se contestou, o estorno automático fica bloqueado até a análise do banco concluir; se não contestou, pode ter ocorrido falha na devolução automática.<br><br><b>Macro de contestação:</b> explique que, se a transação for contestada (pelo app do banco ou atendimento), o saldo fica bloqueado para análise do banco, e não pode ser transferido até essa análise terminar.<br><br>Se a devolução levar mais de 5 dias úteis, reporte no canal #atendimento_b2c e peça a devolução para @Mayrla Santos, @Caique ou @seniorops." },
+
+  bloqueio: {
+    q: "Bloqueio ou reprovação — qual situação?",
+    opts: [
+      { label: "Reprovado por renda (salary_not_found)", to: "bl_reprovado_renda" },
+      { label: "Reprovado por modelo", to: "bl_reprovado_modelo" },
+      { label: "Bloqueado por renda (salary not found / terminated)", to: "bl_bloqueado_renda" },
+      { label: "Bloqueado por falta de dados para CCB (account_change_required)", to: "bl_ccb" },
+      { label: "Bloqueado por atraso (over5V)", to: "bl_atraso" }
+    ]
+  },
+  bl_reprovado_renda: { a: "No Retool aparece 'não elegível' com reason 'salary_not_found'. Investigue:<br>- Em qual banco recebe salário/renda?<br>- Qual a modalidade da conta?<br>- Há quanto tempo recebe nessa conta?<br>- É CLT ou autônomo?<br>- Mantém o valor na conta ou transfere tudo após receber?<br>- Recebe uma vez no mês ou quinzenalmente?<br><br>A análise funciona em conta corrente e poupança (idealmente corrente); conta salário não é aceita, pois não conseguimos depositar nela.<br><br><b>Importante:</b> para clientes de Crédito Fácil, evite a palavra 'salário' — use sempre 'renda'. Nunca diga que o cliente foi bloqueado 'porque não encontramos salário' ou que o produto é 'só para quem recebe salário'." },
+  bl_reprovado_modelo: { a: "No Retool aparece 'não elegível' com reason 'by model'. Informe que o cliente foi reprovado e que o prazo entre análises é de 3 meses a partir da reprovação. Se questionar o motivo, explique que por privacidade e segurança não temos acesso ao motivo exato.<br><br>Para casos não elegíveis, não é possível desbloqueio manual por exceção de renda." },
+  bl_bloqueado_renda: {
+    a: "Indica que não foi possível identificar renda válida do cliente (reasons: salary not found, salary terminated, ou account change salary not found). Impacta os dois produtos — no Crédito Fácil a renda é usada para análise de crédito, na Antecipação o salário é necessário para o funcionamento do produto.<br><br>Investigue o motivo e oriente o cliente a reconectar a conta onde recebe a renda/salário, preferencialmente conta corrente (poupança também funciona).",
+    opts: [
+      { label: "O motivo é salary_terminated", to: "bl_salary_terminated" },
+      { label: "Ver casos de exceção para desbloqueio manual", to: "bl_excecao" }
+    ]
+  },
+  bl_salary_terminated: { a: "Indica que o sistema identificou que a renda do cliente vem de rescisão ou seguro-desemprego — ou seja, sem renda ativa identificável no momento.<br><br>Para Antecipação de Salário: não é possível seguir, pois não há salário para antecipar.<br>Para Crédito Fácil: o cliente permanece não elegível até identificarmos uma renda válida." },
+  bl_excecao: { a: "Só se aplica a clientes dos grupos AA, A ou B, sem desbloqueio anterior nos últimos 6 meses.<br><br>1. Informe ao cliente que o desbloqueio será feito em caráter de exceção e que não será possível repetir.<br>2. Clique em 'Desbloquear' no Retool.<br>3. Anote o motivo (recebe em dinheiro, é autônomo, recebe por conta em banco não atendido etc.), o grupo do cliente, e registre que ele está ciente de que não haverá novo desbloqueio.<br><br>Exemplo de anotação: 'Desbloqueio manual por exceção - Grupo X: (motivo)'." },
+  bl_ccb: { a: "No Retool aparece 'Bloqueado' com reason 'account_change_required' — faltam dados cadastrais mínimos para gerar a CCB. O cliente não pode seguir pela Antecipação via Pix CC.<br><br>Oriente a conectar outra conta bancária, preferencialmente conta corrente, e aguardar nova análise. Não é possível desbloqueio manual por exceção nesse motivo.<br><br>Clientes novos sem esses dados ficam não elegíveis à Antecipação via Pix CC; clientes de recorrência são bloqueados com essa reason e precisam reconectar outra conta." },
+  bl_atraso: { a: "No Retool aparece 'Bloqueado' com reason 'over5V', junto com a data de desbloqueio — informe sempre +1 dia após essa data como nova tentativa.<br><br>O prazo de bloqueio por atraso é de 3 meses; depois disso o cliente pode solicitar nova análise. Não fazemos desbloqueio antecipado, exceto:<br>- Cliente de Antecipação que não recebeu o salário (precisa do extrato como comprovação)<br>- Reclamações formais (R.A., consumidor.gov, Procon)<br><br>Atenção: se for aprovado numa nova análise após o bloqueio, o limite provavelmente será menor — não prometa o mesmo limite de antes." },
+
+  fraude: {
+    q: "Suspeita de fraude — o que você precisa?",
+    opts: [
+      { label: "Critérios para marcar suspeita de fraude", to: "fr_criterios" },
+      { label: "Validar cadastro via CAF", to: "fr_caf" },
+      { label: "Cadastro com tarja vermelha ou preta", to: "fr_tarja" }
+    ]
+  },
+  fr_criterios: { a: "<b>Cenários que indicam possível fraude:</b> e-mail divergente do nome cadastrado; chave Pix em nome de outra pessoa; nome divergente do CPF; relato de terceiro sobre Pix enviado por engano; extrato mostrando repasse do depósito a um terceiro logo após o recebimento; tentativas de cadastro com titularidade diferente; mais de um cadastro pelo mesmo Device ID.<br><br><b>Marque como suspeita de fraude quando:</b> há indício de que o usuário está se passando por outra pessoa; ele não reconhece a contratação; diz que os dados não são dele; afirma nunca ter contratado; ou há troca de número já em uso.<br><br><b>Ao identificar:</b> aplique 'suspeita de fraude' no cadastro e registre as evidências em 'Anotações' no Retool." },
+  fr_caf: {
+    a: "O cliente consegue acessar o app da Facio, mas recebe aviso pedindo para entrar em contato para validar o cadastro. Nesse período, novas contratações ficam bloqueadas até a validação.<br><br>Busque o CPF do cliente na CAF. Se aprovado, siga com o desbloqueio do cadastro. Se reprovado, verifique o motivo.",
+    opts: [
+      { label: "Ver motivos comuns de reprovação", to: "fr_caf_motivos" },
+      { label: "Cliente tem outro documento para reenviar", to: "fr_caf_reenvio" },
+      { label: "CPF não aparece na CAF", to: "fr_caf_nao_consta" },
+      { label: "Quais documentos são aceitos?", to: "fr_caf_documentos" }
+    ]
+  },
+  fr_caf_motivos: { a: "Documento com mais de 10 anos de emissão; documento ilegível (foto de baixa qualidade); selfie não compatível com o documento; divergência de dados informados; liveness reprovado; nome divergente do cadastro na Receita Federal.<br><br>Atenção: a CAF não sinaliza menores de idade — confira sempre a idade do cliente durante a validação. Se for menor de idade, reprove a solicitação." },
+  fr_caf_reenvio: { a: "Se o cliente tiver outro documento válido, envie o link: https://cadastro.io/4c4b3a510862a994fcede290332607ad<br><br>Depois do reenvio: revalide na CAF; se aprovado, remova a suspeita de fraude no Retool (Remover Suspeitas → Usuário validou o cadastro → Confirmar) e informe que o cadastro foi validado.<br><br>O número de contato deve ser o mesmo cadastrado — se for diferente, oriente o cliente a usar o número registrado ou atualizar pelo app." },
+  fr_caf_nao_consta: { a: "Se o CPF não constar na CAF, informe que não foi possível localizar o envio da documentação e peça que o cliente envie os dados de novo pelo link: https://cadastro.io/4c4b3a510862a994fcede290332607ad" },
+  fr_caf_documentos: { a: "A CAF aceita apenas RG, CNH ou CTPS física — não aceita RNE/RNM nem passaporte.<br><br>Se o cliente apresentar documento não aceito, ou tiver dificuldades na plataforma, siga por validação manual, solicitando: selfie segurando um documento de identidade original ao lado do rosto, e foto do mesmo documento com os dados legíveis (frente e verso)." },
+  fr_tarja: { a: "Bloqueios antigos feitos manualmente (tarja vermelha) ou diretamente pela tech (tarja preta, ligado ao Carnaval de 2023) não usavam o botão de suspeita de fraude do sistema atual. Removê-los exigiria alteração manual direta no banco de dados.<br><br>Por isso, não realizamos mais validação ou reversão desse tipo de bloqueio — infelizmente não é possível liberar cadastros com essa marcação." },
+
+  inadimplencia: {
+    q: "Inadimplência — qual dúvida?",
+    opts: [
+      { label: "Cliente não recorda da contratação ou valor devido", to: "in_nao_recorda" },
+      { label: "Cliente quer saber o valor devido", to: "in_valor_devido" },
+      { label: "Poderá contratar novamente após pagar em atraso?", to: "in_contratar_novamente" },
+      { label: "Cliente quer negociar / quitar à vista", to: "in_negociar" },
+      { label: "Parcelamento da dívida", to: "in_parcelamento" },
+      { label: "Cliente solicitou documentos (DED/DDC/quitação)", to: "in_documentos" },
+      { label: "Remoção do CPF do SERASA", to: "in_remocao_serasa" },
+      { label: "Entender consequências de atraso (juros/multa)", to: "in_consequencias" },
+      { label: "Baixa por falecimento (débito em aberto)", to: "in_falecimento" }
+    ]
+  },
+  in_consequencias: {
+    q: "Consequências de atraso — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "in_consequencias_cf" },
+      { label: "Antecipação de Salário", to: "in_consequencias_ant" }
+    ]
+  },
+  in_consequencias_cf: { a: "Os encargos começam a partir do primeiro dia após o vencimento (D+1), com três componentes: multa de 2% (fixa, uma vez), juros de mora de 1% a.m. (composto, dia a dia) e juros remuneratórios contratuais (compostos, dia a dia). O valor acelera com o tempo por causa dos juros compostos.<br><br>A partir de 15 dias de atraso, o cliente é notificado sobre possível negativação. A negativação no Serasa ocorre após 30 dias — mas esse prazo não deve ser comunicado diretamente ao cliente.<br><br><b>Nunca calcule o valor manualmente.</b> Use sempre a Calculadora do Retool para informar o valor atualizado com todos os encargos." },
+  in_consequencias_ant: { a: "O contrato prevê multa de 2% + juros de 1% a.m. + negativação, mas a aplicação desses encargos está suspensa, para não prejudicar clientes que não receberam salário.<br><br><b>Atenção:</b> não informe diretamente ao cliente que os encargos não serão cobrados. Mantenha o tom previsto em contrato e oriente o pagamento o mais rápido possível, sem mencionar a suspensão." },
+  in_valor_devido: {
+    q: "Valor devido — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "in_valor_cf" },
+      { label: "Antecipação de Salário", to: "in_valor_ant" }
+    ]
+  },
+  in_valor_cf: { a: "O valor em aberto já inclui os encargos de atraso (multa + mora + juros), que crescem a cada dia. Consulte sempre a Calculadora do Retool para informar o valor atualizado — nunca calcule manualmente." },
+  in_valor_ant: { a: "Informe o valor em aberto conforme registrado no sistema." },
+  in_contratar_novamente: { a: "Informe que não é possível prever se o cadastro será bloqueado ou não após pagamento em atraso. O ideal é pagar assim que possível — quanto menor o atraso, menores as chances de bloqueio." },
+  in_negociar: {
+    q: "Negociação / quitação à vista — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "in_negociar_cf" },
+      { label: "Antecipação de Salário", to: "in_negociar_ant" }
+    ]
+  },
+  in_negociar_cf: { a: "Acordos não estão disponíveis no momento. Oriente o pagamento integral do valor atualizado (com encargos). Se o cliente insistir, informe que essa opção não existe para o produto dele e ofereça o pagamento parcial via Retool como alternativa." },
+  in_negociar_ant: { a: "Utilize o Notion de negociação de dívidas para oferecer a quitação à vista ao cliente." },
+  in_parcelamento: {
+    q: "Parcelamento da dívida (pós-vencimento) — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "in_parc_cf" },
+      { label: "Antecipação de Salário", to: "in_parc_ant" }
+    ]
+  },
+  in_parc_cf: { a: "Parcelamento não disponível no momento. Se o cliente solicitar, informe que essa opção não está disponível para o produto dele e oriente sobre pagamento integral ou parcial via Retool." },
+  in_parc_ant: { a: "Disponível apenas para contratos que já estavam com mais de 30 dias de atraso em 16/03/2026. Demais antecipações não têm opção de parcelamento.<br><br><b>Regras para os elegíveis:</b> parcelas de pelo menos 20% do valor original; transação com mais de 30 dias de atraso; app atualizado; precisa ter configuração de juros (transações muito antigas, de 2022, não têm).<br><br><b>Se o parcelamento quebrar:</b> informe que o CPF não será reinserido no SERASA nos próximos 30 dias, que ele pagará menos juros porque o cálculo foi quebrado, que pode ignorar os lembretes de atraso, e que pode iniciar novo parcelamento nos próximos 30 dias sem consequência.<br><br>Atenção: solicitações a partir de 16/03/2026 não têm mais opção de parcelamento pelo app, mesmo passando de 30 dias, pois essas antecipações não têm mais cobrança de multa e juros." },
+  in_nao_recorda: { a: "Envie o contrato e o comprovante de depósito ao cliente. Se os documentos não estiverem disponíveis, solicite via workflow no canal #suporte-interno.<br><br><b>Atenção ao documento certo:</b> no Crédito Fácil é a CCB emitida pela QI SCD + Termo de Autorização da Transferência Automática; na Antecipação de Salário é o Contrato emitido pela Facio.<br><br>Para facilitar, tire print das informações relevantes e grife com a ferramenta de captura do Windows. Se o cliente tiver dificuldade em localizar o depósito no extrato, peça o extrato da conta para ajudar a identificar." },
+  in_documentos: { a: "Solicite o descritivo de evolução da dívida (DED), documento descritivo de crédito (DDC), termo de quitação ou similares via workflow no #suporte-interno. Informe prazo de 2 dias úteis para emissão e peça que o cliente retorne após esse prazo." },
+  in_remocao_serasa: { a: "Verifique a data do pagamento: se foi há menos de 5 dias úteis, informe que o prazo para remoção ainda não foi atingido. Se foi há mais de 5 dias úteis, verifique no link do QS se o CPF já foi removido — se não, solicite verificação no canal #atendimento_b2c.<br><br>Como a negativação na Antecipação está suspensa, isso se aplica principalmente ao Crédito Fácil (negativação após 30 dias de atraso)." },
+  in_falecimento: { a: "1. Solicite o atestado de óbito: original, nítido e legível, sem cortes (bordas amarelas completas). Confira se a data da última antecipação é ANTES do falecimento — verifique data de cadastro, data da antecipação em aberto e data do óbito para confirmar que a antecipação é legítima.<br>2. Preencha o formulário interno com tópico 'Baixa por falecimento', anexando a certidão de óbito no campo comprovante.<br>3. Registre no Retool a baixa por falecimento e classifique o caso como suspeita de fraude." },
+
+  pagamento: {
+    q: "Pagamento — qual dúvida?",
+    opts: [
+      { label: "Métodos de pagamento disponíveis", to: "pg_metodos" },
+      { label: "Cliente quer devolver o valor recebido", to: "pg_devolucao" },
+      { label: "Pagamento antecipado", to: "pg_antecipado" },
+      { label: "Parcelamento antes do vencimento", to: "pg_parcelamento" },
+      { label: "Pagamento parcial", to: "pg_parcial" },
+      { label: "Dúvida sobre data de vencimento", to: "pg_vencimento" },
+      { label: "Cartão de débito (Antecipação)", to: "pg_cartao" },
+      { label: "Pagamento não reconhecido", to: "pg_nao_reconhecido" },
+      { label: "Pendência no Serasa mesmo já pago (DDA)", to: "pg_dda" },
+      { label: "Dúvidas sobre limite", to: "pg_limite" }
+    ]
+  },
+  pg_metodos: { a: "Identifique o produto antes de orientar. Pix Copia e Cola está disponível para os dois produtos. Boleto: só via Retool no Crédito Fácil, disponível no app na Antecipação. Transferência Automática: disponível no Crédito Fácil; na Antecipação só para contratos já feitos (em descontinuação). Cartão de débito: não disponível no Crédito Fácil; na Antecipação só para quem já contratou com cartão.<br><br>Os métodos disponíveis dependem do produto e da oferta vigente — confira caso a caso no fluxo de contratação.<br><br>Para Pix Copia e Cola: oriente o cliente a copiar o código no app da Facio e colar exatamente no campo 'Pix Copia e Cola' do banco.<br><br>Se der erro específico no app do banco (e não for instabilidade geral do Pix ou Bacen), recomende tentar por outra instituição bancária." },
+  pg_devolucao: {
+    a: "O cliente pode devolver o valor integral do desembolso via Pix, dentro de 7 dias corridos após o depósito, para os dois produtos. Informe como fazer (macro do banco) e avise que devoluções excessivas podem levar ao bloqueio do cadastro.<br><br>Devolução incorreta com PIX avulso de chave CNPJ (QI Tech, FIDC, Transfeera etc.): poste no canal correto para tratativa.<br><br>Bloqueio preventivo por devolução do primeiro pedido: valide o cadastro, questione o motivo da devolução, libere o cadastro e avise sobre devoluções excessivas.",
+    opts: [ { label: "Cliente devolveu depois de 7 dias corridos", to: "pg_devolucao_apos7" } ]
+  },
+  pg_devolucao_apos7: {
+    q: "Devolução após 7 dias — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "pg_dev7_cf" },
+      { label: "Antecipação de Salário", to: "pg_dev7_ant" }
+    ]
+  },
+  pg_dev7_cf: { a: "O valor é sempre estornado de volta para o cliente — não é aproveitado como pagamento. Oriente o pagamento pelos canais corretos (Pix Copia e Cola no app ou via Retool)." },
+  pg_dev7_ant: { a: "O valor é tratado como pagamento parcial. Oriente o pagamento pelos canais corretos (Pix Copia e Cola ou Boleto no app)." },
+  pg_antecipado: {
+    q: "Pagamento antecipado — qual produto?",
+    opts: [
+      { label: "Crédito Fácil", to: "pg_ant_cf" },
+      { label: "Antecipação de Salário", to: "pg_ant_ant" }
+    ]
+  },
+  pg_ant_cf: {
+    a: "Permitido logo após a contratação, total ou parcial, com desconto proporcional aos dias antecipados — porque os juros são calculados pelo tempo que o dinheiro fica com o cliente. Quanto antes pagar, menor o valor total.<br><br>Pagamento parcial antecipado funciona igual, com desconto proporcional ao valor pago.<br><br><b>Sempre simule na Calculadora do Retool</b> (seção 'Simular pagamento'): escolha a data, o tipo (total ou parcial) e, se parcial, o valor — nunca calcule manualmente.",
+    opts: [ { label: "Contratação com menos de 7 dias quer pagar antes", to: "pg_ant_cf_7dias" } ]
+  },
+  pg_ant_cf_7dias: { a: "Clientes que querem pagar cerca de 1 dia após receber o Crédito Fácil não conseguem, pois a operação ainda não foi cedida a um FIDC.<br><br>Primeiro identifique a motivação (quer desistir, reduzir juros, acha que aumenta limite, não vai mais usar o valor, contratou por engano).<br><br><b>Quer cancelar/desistir:</b> oriente a desistência dentro de 7 dias — devolução sem taxas.<br><br><b>Só quer antecipar o pagamento:</b> informe que pagar antes de 1 dia não é possível, mas que dá pra gerar um link de pagamento com vencimento em 2 dias, que reduz os juros mas não aumenta o limite (o restante segue em aberto até o vencimento)." },
+  pg_ant_ant: { a: "Permitido após 5 dias úteis do depósito, mas não gera desconto — a tarifa é fixa, pois o cliente paga por um serviço já prestado (antecipar o salário), não por juros de uso do dinheiro. É como uma taxa de entrega: não muda se você recebe mais rápido ou mais devagar.<br><br>Se o cliente insistir em desconto, reforce que o valor é definido na contratação e não varia com a data de pagamento — o que ele pode fazer é quitar o quanto antes para liberar o cadastro para um novo pedido." },
+  pg_parcelamento: { a: "Se o cliente entrar em contato antes do vencimento, informe que não trabalhamos com parcelamento nesse momento. Peça que retorne um dia após o vencimento para verificar as opções, incluindo pagamento parcial via Retool.<br><br>Atenção: para Antecipação de Salário, solicitações a partir de 16/03/2026 não terão opção de parcelamento pelo app mesmo passando de 30 dias em aberto, pois essas antecipações não têm mais cobrança de multa e juros." },
+  pg_parcial: { a: "Crédito Fácil: a Facio é legalmente obrigada a aceitar pagamento parcial a qualquer momento — já disponível via Retool, em breve no app.<br><br>Antecipação de Salário: disponível via Retool somente após o vencimento da antecipação; não disponível no app." },
+  pg_vencimento: { a: "Em caso de dúvida, informe a data de vencimento e o valor devido (o cliente também consegue ver no app).<br><br>Sobre alterar a data: se o pedido foi depositado há menos de 7 dias e o cliente insistir, informe que ele pode devolver o valor recebido para poder alterar a data. Se foi depositado há mais de 7 dias, explique que não é possível trocar a data de vencimento." },
+  pg_cartao: {
+    q: "Cartão de débito — o que você precisa?",
+    opts: [
+      { label: "Como funciona o cartão de débito", to: "pg_cartao_como" },
+      { label: "Erro ao cadastrar o cartão", to: "pg_cartao_erro" },
+      { label: "Dúvida sobre uma cobrança no cartão", to: "pg_cartao_cobranca" },
+      { label: "Cliente com oferta exclusiva quer trocar de banco", to: "pg_cartao_oferta_exclusiva" }
+    ]
+  },
+  pg_cartao_como: { a: "Não disponível no Crédito Fácil. Na Antecipação, disponível de forma restrita — apenas clientes Nubank Grupo C que já contrataram com o cartão.<br><br>O cliente cadastra o cartão de débito e a cobrança ocorre automaticamente na data de vencimento. Sem saldo, há novas tentativas ao longo do dia (cobrança total ou parcial) e nos dias seguintes até a quitação.<br><br>Na validação do cartão é feita uma cobrança de R$ 0,10 com estorno automático. O cartão virtual do Nubank é o mais recomendado, por segurança e maior chance de êxito." },
+  pg_cartao_erro: { a: "Peça print do erro e investigue: o cartão cadastrado é físico? O que acontece ao tentar cadastrar o virtual? É da mesma conta cadastrada? É de titularidade do cliente?<br><br>Depois de investigar, recomende a melhor solução — geralmente orientamos cadastrar o cartão virtual." },
+  pg_cartao_cobranca: { a: "O cliente pode questionar cobranças parciais ou totais no cartão. Use o que foi ensinado no treinamento de Tom de Voz para explicar a cobrança." },
+  pg_cartao_oferta_exclusiva: { a: "Quando o cliente tem oferta exclusiva no cartão de débito, o sistema trava a troca de banco, deixando só o Nubank disponível. Nesse caso, só a exclusão do cadastro resolve.<br><br>Antes de excluir, informe: a troca só é possível se ele receber salário no novo banco por pelo menos 3 meses; a aprovação não é garantida (se reprovado, precisa aguardar o prazo entre análises); o limite pode ser menor que o atual; não é possível reverter para a análise anterior à troca.<br><br>Se o cliente confirmar que quer seguir, anote no Retool o motivo da exclusão (troca de banco, preso no fluxo do cartão, ciente do risco de reprovação), realize a exclusão e oriente a nova análise." },
+  pg_nao_reconhecido: {
+    q: "Pagamento não reconhecido — por qual canal?",
+    opts: [
+      { label: "Via boleto", to: "pg_nr_boleto" },
+      { label: "Via Pix credor FIDC", to: "pg_nr_pix" }
+    ]
+  },
+  pg_nr_boleto: { a: "Informe que o pagamento demora até 2 dias úteis para ser identificado. Depois desse prazo, se estiver tudo certo, recebemos o valor e o cliente pode contratar novamente." },
+  pg_nr_pix: { a: "Peça para o cliente aguardar alguns minutos e atualizar o app. Se não for reconhecido, solicite o comprovante e verifique se foi um pagamento avulso." },
+  pg_dda: { a: "DDA é a visualização digital de boletos — não é uma cobrança duplicada nem indica inadimplência real. Pode aparecer como 'pendente' no Serasa mesmo já pago, por atraso de atualização entre sistemas.<br><br>1. Verifique no Retool se há pendência ativa (Crédito Fácil ou Antecipação).<br>2. Sem pendência no sistema: informe que não há pendência registrada e que o boleto no Serasa é só o DDA, que pode demorar a atualizar — o cliente pode usar a opção 'marcar como pago' no banco/Serasa para tirar da visualização dele.<br>3. Com pendência no sistema: informe a pendência em aberto e siga o fluxo padrão de cobrança.<br><br>Oriente sempre o cliente a não fazer um segundo pagamento sem confirmar com a gente antes." },
+  pg_limite: { a: "Explique como funciona a análise de crédito mensal e que não é possível liberar aumento de limite pelo atendimento.<br><br>Pagamento antecipado não aumenta limite em nenhum dos dois produtos — no Crédito Fácil gera desconto pela redução de juros, mas não aumento; na Antecipação também não gera aumento, independente do prazo.<br><br>Com pedido em aberto, não é possível contratar duas vezes ao mesmo tempo — o cliente precisa quitar antes. O valor máximo depende do perfil de crédito de cada cadastro, apurado na análise mensal." },
+
+  indicacao: {
+    q: "Indicação — qual dúvida?",
+    opts: [
+      { label: "Como funciona o programa de indicação", to: "ind_como_funciona" },
+      { label: "Verificar se houve pagamento da recompensa", to: "ind_verificar_pagamento" },
+      { label: "Verificar vínculo da indicação (Amplitude)", to: "ind_verificar_vinculo" },
+      { label: "O indicado realizou o pagamento?", to: "ind_pagamento_indicado" },
+      { label: "Motivos comuns para a recompensa não liberar", to: "ind_motivos_nao_liberar" },
+      { label: "Caso excepcional para liberar o bônus manualmente", to: "ind_excecao" }
+    ]
+  },
+  ind_como_funciona: { a: "O usuário recebe uma recompensa quando indica um amigo sem vínculo anterior com a Facio, usando o link de indicação dele, e todas as etapas são concluídas: o indicado se cadastra pelo link e é aprovado na análise; solicita a primeira Antecipação ou Crédito Simples; e paga essa primeira contratação em dia. Após a confirmação do pagamento, o depósito é feito automaticamente na conta do indicador.<br><br>A recompensa vale só para a primeira contratação do indicado, independente do produto. Se o indicado já fez uma Antecipação antes e depois migrou para Crédito Simples, não há pagamento adicional pela primeira contratação de Crédito Simples — o bônus é pago uma única vez por indicado." },
+  ind_verificar_pagamento: { a: "Verifique na aba Depósitos do Retool se existe transferência do valor para o usuário.<br><br>Transferência concluída: informe a data e envie o comprovante, confirmando se é o indicado mencionado pelo usuário.<br><br>Transferência existe mas não concluída: abra depósito manual via Forms e informe que o depósito será feito em até 5 dias úteis.<br><br>Se o usuário estiver em atraso, a recompensa é usada para abater a dívida — solicite o abatimento pelo Forms." },
+  ind_verificar_vinculo: { a: "Quando o usuário diz que não recebeu a recompensa e a transferência não consta na aba Depósitos:<br>1. No Retool, copie o Public ID do usuário.<br>2. No Amplitude, remova o Public ID padrão e cole o do usuário na busca.<br>3. Localize o gráfico de envios do link de indicação, clique na barra e em 'View Users'.<br>4. Localize o evento 'Web Page View' de cada indicado — ele representa o compartilhamento do link.<br><br>Confira se esse 'Web Page View' é o primeiro evento do cadastro do indicado.",
+    opts: [
+      { label: "É o primeiro evento", to: "ind_primeiro_evento_sim" },
+      { label: "NÃO é o primeiro evento", to: "ind_primeiro_evento_nao" }
+    ]
+  },
+  ind_primeiro_evento_sim: { a: "O indicado clicou no link e iniciou o cadastro corretamente — a indicação é válida. Pegue o ID do indicado e consulte no Retool se ele realizou a primeira Antecipação/Crédito Simples e pagou em dia, seguindo depois para a verificação de pagamento." },
+  ind_primeiro_evento_nao: { a: "O indicado já possuía cadastro na Facio antes do envio do link — não houve vínculo de indicação. Informe ao usuário que a recompensa não é elegível nesse cenário, pois não é um novo cadastro a partir do link dele.<br><br>Não repasse dados específicos do cadastro do indicado (data de cadastro, horário, CPF ou qualquer informação sensível)." },
+  ind_pagamento_indicado: {
+    q: "O indicado concluiu o pagamento da primeira contratação?",
+    opts: [
+      { label: "Sim, pagou", to: "ind_pagou_sim" },
+      { label: "Não, ainda não pagou", to: "ind_pagou_nao" }
+    ]
+  },
+  ind_pagou_sim: { a: "Verifique se o indicado usa iOS — na maioria dos casos de falha no vínculo da indicação, o motivo é iOS (raro em Android).<br><br>Se for iOS e não houve vínculo automático: abra solicitação via Forms (exceto se o cliente estiver com débito em aberto) e informe prazo de até 5 dias úteis para análise." },
+  ind_pagou_nao: { a: "A recompensa ainda não foi liberada. Explique que ela só é efetivada depois que o indicado concluir o pagamento da primeira Antecipação ou Crédito Simples — após isso, o valor é depositado automaticamente na conta do usuário." },
+  ind_motivos_nao_liberar: { a: "A recompensa não é válida quando: o cadastro não foi concluído via link de indicação; o indicado foi reprovado na análise; o indicado já tinha cadastro anterior na Facio; ou o indicado ainda não pagou a primeira Antecipação/Crédito Fácil." },
+  ind_excecao: { a: "Quando o indicador cobra um referral não depositado por o indicado já ter cadastro antigo, o depósito pode ser feito manualmente. O formulário tem 3 categorias:<br><br><b>1. Falha de Depósito</b> — quando dá pra ver na guia de depósitos que a transação falhou.<br><b>2. Falha na Vinculação</b> — quando o indicado tem iOS e o sistema não conseguiu identificá-lo.<br><b>3. Exceção</b> — quando o indicado já tinha cadastro antigo, mas ainda assim faremos o depósito manual para preservar a experiência e o CSAT.<br><br>Preencha o campo de resumo do caso (breve, mas suficiente para entendimento). O Caique é responsável pelas validações. Confirme sempre, pelo 'Web Page View', que o indicado foi realmente convidado pelo usuário responsável pela indicação." },
+
+  ct: {
+    q: "Crédito do Trabalhador — o que você precisa?",
+    opts: [
+      { label: "Quem pode solicitar (elegibilidade)", to: "ct_elegibilidade" },
+      { label: "Fechamento mensal da Dataprev", to: "ct_dataprev" },
+      { label: "Consultar status ou elegibilidade do contrato", to: "ct_status_contrato" },
+      { label: "Pagamento, antecipação e Guia FGTS", to: "ct_pagamento" },
+      { label: "Problemas frequentes na contratação", to: "ct_problemas" },
+      { label: "Cancelamento de contrato", to: "ct_cancelamento" },
+      { label: "Dúvidas frequentes", to: "ct_faq" },
+      { label: "Qual time aciono? (Funding, Empregadores, Aquisição)", to: "ct_times" }
+    ]
+  },
+  ct_elegibilidade: { a: "O cliente precisa: ter contrato CLT ativo há pelo menos 3 meses; ter margem consignável disponível (até ~35% do salário líquido); a empresa empregadora precisa ter mais de 10 funcionários; e não pode ter nenhum outro contrato ativo com a Facio (ter dois produtos ativos ao mesmo tempo é uma inconsistência).<br><br>Se encontrar um cliente com CT e outro produto ativos ao mesmo tempo, reporte no canal #cx-oraculos para o time técnico corrigir — essa regra só passou a valer a partir de fevereiro de 2026, então contratos de CT anteriores a essa data podem ter ficado ativos junto com Crédito Fácil ou Antecipação." },
+  ct_dataprev: { a: "A Dataprev faz o fechamento mensal entre os dias 20 e 23 de cada mês. Durante esse período, consultas, simulações e contratações ficam temporariamente indisponíveis.<br><br>Se o cliente entrar em contato: informe que a indisponibilidade é do fechamento mensal da Dataprev, explique que as operações voltam ao normal após a atualização, e oriente uma nova consulta depois da normalização." },
+  ct_status_contrato: {
+    q: "O que você precisa consultar?",
+    opts: [
+      { label: "Ver os status possíveis do contrato", to: "ct_status_lista" },
+      { label: "Ver os status de elegibilidade (Retool)", to: "ct_elegibilidade_retool" },
+      { label: "Onde consultar (Portal QI Tech / Retool)", to: "ct_onde_consultar" }
+    ]
+  },
+  ct_status_lista: { a: "1. Aguardando assinatura — cliente ainda não assinou.<br>2. Emitido (pendente Open Finance) — falta conexão via Open Finance, ou pessoa não elegível e contrato não assinado.<br>3. Aguardando desembolso — transferência em andamento.<br>4. Desembolsado — valor pago ao cliente.<br>5. Liquidado — contrato quitado.<br>6. Cancelado — contrato cancelado." },
+  ct_elegibilidade_retool: { a: "<code>Elegível</code> — cliente aprovado para solicitar o CT.<br><code>Não elegível</code> — perfil não aprovado para o produto.<br><code>Pending</code> — instabilidade no fluxo; esse status não deveria existir (possível bug).<br><code>Expired</code> — proposta expirada, considerar como reprovado por prazo excedido.<br><br>A proposta vale até 7 dias a partir da contratação pela CTPS. Em caso de reprovação no modelo ou rejeição de abertura de conta na QI Tech, a elegibilidade expira na hora. Depois de expirar, o cliente pode iniciar nova proposta se ainda tiver elegibilidade." },
+  ct_onde_consultar: { a: "<b>Portal QI Tech:</b> Operações → Crédito estruturado → CPF do cliente. Mostra status da operação, data de desembolso, valor solicitado, telefone de contato, previsão de desconto das parcelas, data de emissão, e-mail cadastrado. A conta Facio dos contratos de CT é a Facio LLC — 34.708.574/0001-30.<br><br><b>Retool Backoffice:</b> busque pelo CPF e abra a aba Crédito do Trabalhador. Mostra contratos ativos, valor contratado, número e valor das parcelas, data da solicitação, status, download do contrato em PDF, detalhes do depósito, data de assinatura, conta usada e emissão do recibo. Na aba Parcelas dá pra ver quantidade, valor e o mês do salário usado para o desconto." },
+
+  ct_pagamento: {
+    q: "Pagamento do CT — qual assunto?",
+    opts: [
+      { label: "Como funciona o desconto em folha", to: "ct_desconto_folha" },
+      { label: "Desligamento ou troca de empresa", to: "ct_desligamento" },
+      { label: "Antecipar ou quitar antes da data", to: "ct_antecipar" },
+      { label: "Desconto indevido em folha (duplicidade)", to: "ct_desconto_indevido" },
+      { label: "Guia FGTS não paga pela empresa", to: "ct_guia_fgts" },
+      { label: "Gerar boleto pelo Retool", to: "ct_boleto_retool" },
+      { label: "Transferência Automática por parcela em atraso", to: "ct_transf_automatica" }
+    ]
+  },
+  ct_desconto_folha: { a: "O fluxo ideal é o desconto automático em folha. Se a contratação ocorre entre os dias 1 e 20, o desconto acontece no salário do mês seguinte. Entre o dia 21 e o fim do mês, o desconto ocorre em dois meses.<br><br>O sistema só confirma o desconto no fechamento do mês." },
+  ct_desligamento: { a: "<b>Desligamento:</b> a parcela do mês pode ser descontada via rescisão. Até 10% do saldo do FGTS pode ser usado, e até 100% da multa rescisória (40% do FGTS) pode abater o saldo devedor total do empréstimo.<br><br><b>Troca de empresa:</b> o contrato permanece em aberto; o cliente pode renegociar pela nova empresa, ou a Facio pode emitir boleto mês a mês (ou todos de uma vez). Canal: ct-boleto-cobrança." },
+  ct_antecipar: {
+    a: "A parcela antecipada é sempre a última — se houver mais de uma parcela restante, as demais continuam sendo descontadas normalmente em folha. Alinhe essa expectativa com o cliente.<br><br><b>Risco:</b> mesmo após a quitação, o desconto em folha pode acontecer de qualquer forma. A devolução só ocorre depois do repasse do governo.<br><br>Para quitar, use o Portal QI Tech → Quitar operação (total) ou Quitar parcialmente. Depois que o cliente aceitar o valor, gere o boleto pela QI Tech e envie em PDF.",
+    opts: [ { label: "Houve desconto em folha mesmo após quitar (duplicidade)", to: "ct_desconto_indevido" } ]
+  },
+  ct_desconto_indevido: { a: "Solicite: holerite com o desconto, comprovante de recebimento do salário (extrato que comprove o recebimento), e a chave Pix do titular.<br><br>A devolução ocorre em até 5 dias úteis. Preencha o formulário na opção Crédito do Trabalhador → 'CT - desconto indevido'." },
+  ct_guia_fgts: { a: "Acionado quando a guia de FGTS não foi paga ou o prazo foi perdido pela empresa. O contato pode vir da própria empresa ou do trabalhador (orientado pela empresa).<br><br>Confirme o cenário (guia não paga ou prazo expirado) e colete os dados: se veio pela empresa, dados do funcionário + CNPJ + e-mail da empresa; se veio pelo cliente, CNPJ + e-mail da empresa.<br><br>Encaminhe pelo canal #cx-oraculos e siga com a solicitação de boleto via Slack." },
+  ct_boleto_retool: { a: "1. No Retool Backoffice, busque o CPF do cliente e abra a aba Crédito do Trabalhador.<br>2. Clique em 'gerar boleto' — a data de vencimento é pré-definida automaticamente para 3 dias depois.<br>3. Informe quem vai pagar: Customer (o próprio cliente) ou Empresa.<br>4. Baixe o boleto e encaminhe ao usuário." },
+  ct_transf_automatica: { a: "Quando uma parcela não é paga no vencimento, o valor fica em aberto (em atraso) e o Pix Inteligente entra em ação, cobrando parcial ou integralmente conforme o saldo disponível na conta vinculada — a autorização foi dada pelo próprio cliente na contratação.<br><br>No Amplitude, verifique o evento Account status:<br><code>Success</code> — conta aprovada, segue para a próxima etapa.<br><code>Pending</code> — conta em análise, oriente o cliente a aguardar.<br><code>Reject</code> — conta rejeitada pela QI Tech, informe que a proposta foi reprovada e que é preciso aguardar 3 meses para nova solicitação." },
+
+  ct_problemas: {
+    q: "Qual problema o cliente está enfrentando na contratação?",
+    opts: [
+      { label: "Conexão Open Finance com erro", to: "ct_prob_of" },
+      { label: "Inconsistência de dados no cadastro", to: "ct_prob_dados" },
+      { label: "Dificuldade na assinatura ou documentos (QI Tech)", to: "ct_prob_assinatura" },
+      { label: "Problema no Pix Inteligente", to: "ct_prob_pix" },
+      { label: "Conta de pagamento pendente ou reprovada", to: "ct_prob_conta" },
+      { label: "Cliente contratou mas não recebeu o desembolso", to: "ct_prob_desembolso" },
+      { label: "Cliente com CF ativo recebeu oferta de CT", to: "ct_prob_cf_ct" }
+    ]
+  },
+  ct_prob_of: { a: "Checklist inicial: o app do banco está atualizado? O aparelho já foi reiniciado?<br><br>Se persistir, consulte o canal de Canais Críticos para ver se o banco está fora do ar.<br><br>Confirme se a conta é corrente — conta poupança pode gerar erro, e conta salário não é aceita.<br><br>Se não conectar de primeira, oriente o cliente a aguardar 24 horas para a retentativa automática do sistema." },
+  ct_prob_dados: { a: "Confirme e-mail e telefone com o usuário. Oriente que ele pode atualizar o telefone diretamente no login do app da Facio, após a aprovação da proposta." },
+  ct_prob_assinatura: { a: "Recomende o Google Chrome — evite Safari (iPhone) e navegadores nativos, que costumam dar erro. Sugira testar em outro navegador ou aparelho, e reiniciar o celular antes de tentar de novo.<br><br>Para a foto do documento: precisa estar nítida, com iluminação natural e sem reflexo — e verifique se a lente da câmera está limpa." },
+  ct_prob_pix: { a: "Siga o mesmo protocolo do Open Finance: app atualizado + reiniciar o aparelho. Verifique também se o banco do cliente está com instabilidade nos canais internos." },
+  ct_prob_conta: { a: "Explique que a reprovação faz parte dos critérios internos — não é necessariamente um erro.<br><br>Se o status ficar 'preso' por muito tempo, escale para o Senior Ops fazer o reprocessamento. Não tente reprocessar manualmente sem autorização — existe uma rotina automática diária, então se o caso tiver 2 dias ou mais, o ideal é aguardar, pois o reprocessamento provavelmente já rodou." },
+  ct_prob_desembolso: { a: "Verifique se o Termo do Pix Inteligente foi aceito e se o contrato foi assinado — clientes com versões antigas do app às vezes não visualizam corretamente a etapa de aceite.<br><br>Nesses casos: peça para atualizar o app, oriente o acesso pelo portal m.facio.com.br, e confirme se não existe nenhuma etapa pendente na contratação." },
+  ct_prob_cf_ct: { a: "O cliente tem Crédito Fácil ativo e recebeu oferta de CT, mas não consegue prosseguir por causa da política de um contrato ativo por cadastro.<br><br>Informe essa política e explique que, para seguir com o CT, ele precisa primeiro quitar o CF e depois acessar de novo o link disponibilizado na Carteira de Trabalho. Após a quitação, o agente precisa excluir o cadastro atual para que o direcionamento do link funcione." },
+
+  ct_cancelamento: {
+    q: "Cancelamento de contrato de CT — como você quer fazer?",
+    opts: [
+      { label: "Via Workflow no Slack", to: "ct_cancel_slack" },
+      { label: "Via Painel da QI Tech", to: "ct_cancel_qitech" },
+      { label: "Ver motivos comuns de cancelamento", to: "ct_motivos_cancelamento" }
+    ]
+  },
+  ct_cancel_slack: { a: "1. Acesse o Workflow no Slack: Workflow → 'Cancelar contrato CT' → clique em 'iniciar'.<br>2. Preencha as informações do cliente pedidas no formulário para identificar o contrato.<br>3. Depois de enviar, informe ao cliente que a solicitação foi feita e que o status será atualizado em breve na Carteira Digital dele." },
+  ct_cancel_qitech: { a: "1. Acesse Operações → Crédito Estruturado no painel da QI Tech.<br>2. Insira o CPF do cliente no campo Número do Documento.<br>3. Verifique se o status NÃO está como 'Desembolsado' — não é possível cancelar depois do desembolso.<br>4. Clique em Ações → Cancelar.<br><br>Antes de cancelar, certifique-se de que o procedimento é o correto; em caso de dúvida, consulte o passo a passo do Slack." },
+  ct_motivos_cancelamento: { a: "<b>Erros de dados/desembolso:</b> conta inválida ou encerrada, Pix incorreto, banco não suporta a transação, divergência de titularidade ou CPF, data de desembolso ultrapassada.<br><br><b>Problemas de KYC:</b> validação facial reprovada (iluminação ruim, rosto coberto, movimento na captura), prova de vida falhou, documentos ausentes.<br><br><b>Outros:</b> proposta expirada, análise de crédito reprovada, falta de assinatura, contrato não constituído, vínculo empregatício que não atende aos critérios do produto, inconsistências de segurança relacionadas a fraude, cancelamento manual a pedido do cliente.<br><br>Esses motivos, de forma geral, não são corrigíveis — o cancelamento é definitivo." },
+
+  ct_faq: {
+    q: "Qual dúvida frequente sobre o CT?",
+    opts: [
+      { label: "Arrependimento (quer desistir)", to: "ct_faq_arrependimento" },
+      { label: "Posso desativar o Pix Inteligente?", to: "ct_faq_desativar_pix" },
+      { label: "Quando ocorrem as transferências automáticas?", to: "ct_faq_quando_transf" },
+      { label: "Isso é débito automático?", to: "ct_faq_debito_automatico" },
+      { label: "Tenho Crédito Fácil aberto, posso contratar CT?", to: "ct_faq_cf_aberto" }
+    ]
+  },
+  ct_faq_arrependimento: { a: "O cliente deve usar a função de devolução do Pix. O prazo para desistência/devolução é de 7 dias corridos — fique atento à janela de fechamento da Dataprev, que pode afetar o processamento." },
+  ct_faq_desativar_pix: { a: "Sim, o cliente tem total controle. Para cancelar: 1) acesse o app do banco; 2) vá em Open Finance / Compartilhamento de dados; 3) clique em Gerenciar autorizações; 4) localize o 'Iniciador'; 5) selecione Encerrar/Revogar acesso. Depois disso, não haverá mais transferências automáticas." },
+  ct_faq_quando_transf: { a: "A qualquer momento, enquanto o contrato estiver em atraso." },
+  ct_faq_debito_automatico: { a: "Não. O Pix Inteligente não é débito automático tradicional — é uma autorização feita via Open Finance, confirmada com login, senha e aceite no app do banco." },
+  ct_faq_cf_aberto: { a: "Não. Só é permitido ter um contrato ativo por vez." },
+
+  ct_times: {
+    q: "Qual time do Crédito do Trabalhador você precisa acionar?",
+    opts: [
+      { label: "Funding (cessão para o FIDC)", to: "ct_time_funding" },
+      { label: "Empregadores (contratos em andamento)", to: "ct_time_empregadores" },
+      { label: "Aquisição (contratação e cadastro)", to: "ct_time_aquisicao" }
+    ]
+  },
+  ct_time_funding: { a: "<b>Missão:</b> garantir que as operações são cedidas e que o fundo tenha rentabilidade.<br><b>Escopo:</b> aprovação de operações cedidas ao FIDC5; acompanhamento da cessão e liquidação.<br><b>Fora do escopo:</b> contratação/cadastro, cobrança PF/PJ, descontos em folha, status de contratos e parcelas.<br><b>OPS resolve sozinho:</b> consultar se o credor de um empréstimo foi cedido ao FIDC5 (Retool).<br><b>Infos necessárias para escalar:</b> número do contrato e customerId.<br><b>Canal:</b> #fidc-tech." },
+  ct_time_empregadores: { a: "<b>Missão:</b> gestão dos empréstimos em andamento, com foco em rentabilidade.<br><b>Escopo:</b> gestão dos contratos de consignado, visibilidade do status (interno e para o cliente), garantir desconto correto pelas empresas, cobrar empresas inadimplentes, controlar saldo devedor.<br><b>Fora do escopo:</b> contratação/cadastro, execução de cobrança PF.<br><b>OPS resolve sozinho:</b> cancelamento por problema no desembolso, pegar CCB e comprovante, informações gerais do contrato, valores e datas de parcelas, status das parcelas, checar desconto em folha pelas Escriturações, quitação antecipada total ou parcial.<br><b>Escalar quando:</b> for preciso gerar cobrança para PF após a data de desconto em folha, ou gerar cobrança para PJ (ainda não há essas ações no Retool).<br><b>Infos necessárias:</b> CPF, contrato, customerId — e se envolver empresa, também CNPJ, nome da empresa e e-mail do RH.<br><b>Canais:</b> #ct-boleto-cobrança e #ct-ajuda-informações." },
+  ct_time_aquisicao: { a: "<b>Missão:</b> aquisição de novos clientes de Crédito do Trabalhador.<br><b>Escopo:</b> jornada de contratação e cadastro (QI Sign, Open Finance, Pix Inteligente, averbação), definição de elegibilidade, estratégia de oferta (taxas, limites, prazos), priorização do funil de aquisição.<br><b>Fora do escopo:</b> gestão de contratos já desembolsados, parcelas e saldo devedor, cobrança, desconto em folha, cessão ao FIDC.<br><b>OPS resolve sozinho:</b> status da elegibilidade (Retool), informações do contrato assinado (painel QI Tech), cancelamento manual de proposta, envio de link de conexão Open Finance para aprovados no modelo.<br><b>Escalar quando:</b> o cliente não conseguir enviar documentação, ou o link do Open Finance apresentar erro.<br><b>Infos necessárias:</b> CPF, contrato, customerId.<br><b>Canal:</b> #ct-ajuda-informações." },
+
+  cf_info: {
+    q: "Crédito Fácil — o que você precisa?",
+    opts: [
+      { label: "O que é o Crédito Fácil e como difere da Antecipação", to: "cf_o_que_e" },
+      { label: "Erro genérico na contratação (menor de idade / cadastro)", to: "cf_erro_generico" },
+      { label: "Juros, IOF e escolha de vencimento", to: "cf_juros_iof" },
+      { label: "O que consultar no Retool", to: "cf_retool" },
+      { label: "Dúvidas frequentes sobre o produto", to: "cf_faq" }
+    ]
+  },
+  cf_o_que_e: { a: "O Crédito Fácil é um empréstimo pessoal (CCB) de parcela única — o cliente recebe um valor e assume uma dívida com pagamento obrigatório, que pode ser pago com qualquer recurso, não depende de receber salário.<br><br><b>Principais diferenças com a Antecipação:</b> no Crédito Fácil a natureza é empréstimo (dívida), na Antecipação é cessão de um recebível futuro. O Crédito Fácil cobra juros pelo tempo do empréstimo e tem IOF; a Antecipação cobra uma tarifa única fixa e não tem IOF. No Crédito Fácil a obrigação de pagar é incondicional; na Antecipação é condicionada ao recebimento do salário." },
+  cf_erro_generico: {
+    q: "O que está causando o erro na contratação?",
+    opts: [
+      { label: "Suspeita de contratação por menor de idade", to: "cf_menor_idade" },
+      { label: "Pode ser inconsistência cadastral (cliente não é menor)", to: "cf_inconsistencia_cadastral" }
+    ]
+  },
+  cf_menor_idade: { a: "O Crédito Fácil não está disponível para menores de 18 anos — a tentativa de contratação pode gerar uma tela de erro genérico.<br><br>1. Solicite o envio do CAF para análise.<br>2. Valide a data de nascimento (a Receita Federal permite consultar a situação cadastral do CPF).<br>3. Se confirmado que é menor de idade: registre a anotação no atendimento, classifique como Suspeita de Fraude, e informe ao cliente que o produto não está disponível para menores no momento.<br><br>Não é necessário escalar via Oráculos ou abrir Bug Report — é uma regra de elegibilidade, sem ação corretiva possível." },
+  cf_inconsistencia_cadastral: { a: "O mesmo erro genérico também pode indicar inconsistência cadastral, como endereço incompleto (logradouro não informado). Antes de tratar como menor de idade, confirme se o cliente realmente se enquadra nessa condição.<br><br>Se não for menor de idade, verifique divergências cadastrais e, se necessário, oriente a troca de conta para reprocessar as informações — é possível recadastrar o mesmo banco quando a data de conexão for superior a 7 dias.<br><br>Não é necessário escalar via Oráculos ou abrir Bug Report nesse cenário." },
+  cf_juros_iof: { a: "O IOF é um imposto obrigatório em operações de crédito no Brasil, já incluído no custo total, e não depende do comportamento do cliente. Os juros contratuais são cobrados pelo tempo que o cliente fica com o dinheiro — pagar antes reduz o valor de juros.<br><br><b>O que pode falar:</b> 'esse crédito tem juros que variam com o tempo', 'se você pagar antes, pode reduzir os juros', 'também há cobrança de IOF'.<br><b>O que não pode falar:</b> chamar de 'tarifa fixa', dizer que 'o valor não muda com o tempo', ou que 'funciona igual à antecipação'.<br><br>Na escolha da data de vencimento, o prazo define o valor final: quanto maior o prazo, maior o total pago em juros — diferente da Antecipação, onde a tarifa não muda conforme o prazo escolhido." },
+  cf_retool: { a: "<b>Aba Usuário:</b> status (elegível/não elegível), data da última elegibilidade, reason, política de crédito aplicada, produto da análise.<br><br><b>Aba Crédito Fácil:</b> contratos ativos, número do contrato, Loan ID, status, credor, datas de solicitação e assinatura, contrato em PDF, valor desembolsado, valor da emissão, IOF, TAC, juros ao mês/ano, CET, detalhes do desembolso (banco, agência, conta, data/horário, autenticação, recibo), simulação de pagamento (total ou parcial) e histórico do empréstimo.<br><br><b>Aba Parcelas:</b> status (a vencer, pago, atrasado), valor e data de vencimento de cada parcela.<br><br><b>Aba Charges:</b> ID da cobrança, valor, data, status (paid/canceled/pending), método de pagamento e link de pagamento." },
+  cf_faq: {
+    q: "Sobre qual tema é a dúvida frequente?",
+    opts: [
+      { label: "Produto e oferta (CF vs Antecipação)", to: "cf_faq_produto" },
+      { label: "Critérios de análise e aprovação", to: "cf_faq_analise" },
+      { label: "Condições de pagamento", to: "cf_faq_pagamento" },
+      { label: "Juros, taxas e descontos", to: "cf_faq_juros" },
+      { label: "Atraso, bloqueio e negativação", to: "cf_faq_atraso" },
+      { label: "Experiência do usuário (app e suporte)", to: "cf_faq_experiencia" },
+      { label: "Funcionalidades e operacional", to: "cf_faq_operacional" },
+      { label: "Estratégia e futuro do produto", to: "cf_faq_estrategia" }
+    ]
+  },
+  cf_faq_produto: { a: "O Crédito Fácil atende os mesmos bancos da Antecipação. O cliente não escolhe entre os dois produtos — só tem acesso a um. A transição para Crédito Fácil é automática (concluída até 30/05). A Antecipação não será descontinuada por enquanto, mas pode ser no futuro.<br><br>Clientes novos e clientes da base com Pix Inteligente vão para Crédito Fácil; ficam na Antecipação só os clientes A/B antigos sem conta QI Tech aberta (grupo Pix Copia e Cola). Não é possível contratar os dois produtos ao mesmo tempo, nem ter mais de uma contratação ativa por vez. Se reprovado em um produto, não há fallback para o outro — inclusive clientes em atraso na Antecipação não podem solicitar o Crédito Fácil." },
+  cf_faq_analise: { a: "A modelagem de grupos (AA, A, B, C, D) é mantida e todos os perfis (A a C) são elegíveis. O rating interno é usado além da renda — o cliente precisa ser aprovado tanto no modelo de renda quanto no de crédito. Autônomos continuam sendo aceitos (aprovados com reason 'renda implícita'). Se o sistema não encontrar salário, o cliente fica não elegível (reason salary_not_found). Existe risco de reprovação também na abertura da conta na QI Tech, como já acontecia na Antecipação." },
+  cf_faq_pagamento: { a: "O prazo continua entre 15 e 45 dias. Pagamento antecipado é permitido logo após a contratação (parcial via Retool, total após 7 dias) e gera desconto pela redução dos juros — diferente da Antecipação, que só permite após 5 dias e não dá desconto. O parcelamento ainda não existe, mas está planejado sem previsão de data. O direito de arrependimento (devolução em até 7 dias sem juros) continua valendo. Pagamento parcial é permitido e ficará visível no app em breve." },
+  cf_faq_juros: { a: "Ainda está sendo definido um teto máximo de juros, com implementação prevista em breve. A taxa varia conforme a oferta e é ajustada continuamente por testes — não é fixa em 30% a.m. Já existe ferramenta no Retool para simular valores atualizados, juros e possíveis descontos por pagamento antecipado. Descontos negociados ainda não estão disponíveis, mas a política de acordos deve ser revisada em breve." },
+  cf_faq_atraso: { a: "Sim, há negativação do CPF no Serasa, após 30 dias de atraso. As regras de bloqueio seguem a mesma lógica da Antecipação: Pix Inteligente e atrasos de ciclos anteriores (+90 dias) não geram bloqueio; inadimplência acima de 20 dias sem pagamento parcial bloqueia; pagamento parcial ou atraso abaixo de 20 dias não bloqueia." },
+  cf_faq_experiencia: { a: "Por enquanto não há histórico de contratações visível para o cliente no app. A CCB fica disponível no app e também é enviada por e-mail junto com a confirmação do depósito. Os termos e condições estão disponíveis no site, na página de Contrato de crédito pessoal. No Retool, o produto aparece em Usuário → Status → Produto, e a calculadora fica em Crédito Fácil → Detalhes → Simular Pagamento." },
+  cf_faq_operacional: { a: "O programa de indicação (referral) funciona normalmente no Crédito Fácil, sem alterações nas regras. Nada muda no acesso por grupo: grupo C segue com Transferência Automática mandatória, grupos A/B com Transferência Automática na oferta exclusiva — ela segue disponível para novas contratações no Crédito Fácil e para os contratos ativos de Antecipação. Isso é viável no Crédito Fácil porque, sendo um empréstimo pessoal, a dívida não é condicionada ao salário, dando mais respaldo legal à cobrança automática. A validação da CCB é simplificada, baseada em autenticação via Open Finance, e o credor será sempre um FIDC." },
+  cf_faq_estrategia: { a: "O foco de longo prazo é manter Crédito do Trabalhador e Crédito Fácil — a Antecipação pode ser descontinuada eventualmente. Não há mudança nas estratégias de divulgação/marketing no momento. Os clientes não deixam de receber ofertas de Transferência Automática — eles são migrados para o novo produto mantendo o mesmo uso." },
+};
+
+let path = ["root"];
+
+function crumbLabel(i) {
+  if (i === 0) return "Início";
+  const parentKey = path[i - 1];
+  const opt = (tree[parentKey].opts || []).find(o => o.to === path[i]);
+  return opt ? opt.label : path[i];
+}
+
+function render() {
+  const bc = document.getElementById("breadcrumb");
+  const content = document.getElementById("content");
+  document.getElementById("search").value = "";
+
+  bc.innerHTML = "";
+  path.forEach((key, i) => {
+    if (i > 0) {
+      const sep = document.createElement("span");
+      sep.textContent = "›";
+      bc.appendChild(sep);
+    }
+    const crumb = document.createElement("span");
+    crumb.textContent = crumbLabel(i);
+    if (i < path.length - 1) {
+      crumb.className = "crumb-link";
+      crumb.onclick = () => { path = path.slice(0, i + 1); render(); };
+    }
+    bc.appendChild(crumb);
+  });
+
+  content.innerHTML = "";
+
+  if (editMode) {
+    const bar = document.createElement("div");
+    bar.className = "edit-bar";
+    const hint = document.createElement("span");
+    hint.className = "hint";
+    hint.textContent = "Modo de edição ativo — edite, adicione ou remova itens.";
+    bar.appendChild(hint);
+    const dl = document.createElement("button");
+    dl.className = "icon-btn";
+    dl.textContent = "Baixar HTML atualizado";
+    dl.onclick = downloadUpdatedHtml;
+    bar.appendChild(dl);
+    content.appendChild(bar);
+  }
+
+  const thread = document.createElement("div");
+  thread.className = "thread";
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i];
+    const node = tree[key];
+    const nextKey = path[i + 1];
+    const chosenOpt = (node.opts || []).find(o => o.to === nextKey);
+    const block = document.createElement("div");
+    block.className = "qa-block";
+
+    if (node.q) {
+      block.appendChild(buildQuestionBubble(key, node));
+    } else if (node.a) {
+      block.appendChild(buildInfoBubble(key, node));
+    }
+
+    if (chosenOpt) {
+      const wrap = document.createElement("div");
+      wrap.className = "chosen-wrap";
+      const pill = document.createElement("div");
+      pill.className = "chosen-pill";
+      pill.textContent = chosenOpt.label;
+      wrap.appendChild(pill);
+      block.appendChild(wrap);
+    }
+    thread.appendChild(block);
+  }
+
+  const currentKey = path[path.length - 1];
+  const node = tree[currentKey];
+  const finalBlock = document.createElement("div");
+  finalBlock.className = "qa-block";
+
+  if (node.a) {
+    finalBlock.appendChild(buildInfoBubble(currentKey, node, true));
+  }
+
+  if (node.q) {
+    finalBlock.appendChild(buildQuestionBubble(currentKey, node));
+  }
+
+  if (node.opts) {
+    const row = document.createElement("div");
+    row.className = "pill-row";
+    node.opts.forEach((opt, idx) => {
+      const wrap = document.createElement("div");
+      wrap.className = "pill-edit-wrap";
+      const btn = document.createElement("button");
+      btn.className = "pill-btn";
+      btn.textContent = opt.label;
+      btn.onclick = () => { path.push(opt.to); render(); };
+      wrap.appendChild(btn);
+      if (editMode) {
+        const editO = document.createElement("button");
+        editO.className = "icon-btn";
+        editO.textContent = "Editar";
+        editO.onclick = () => editOptionLabel(currentKey, idx);
+        wrap.appendChild(editO);
+        const delO = document.createElement("button");
+        delO.className = "icon-btn danger";
+        delO.textContent = "Excluir";
+        delO.onclick = () => deleteOption(currentKey, idx);
+        wrap.appendChild(delO);
+      }
+      row.appendChild(wrap);
+    });
+    finalBlock.appendChild(row);
+  }
+
+  if (editMode) {
+    const actionsRow = document.createElement("div");
+    actionsRow.style.cssText = "display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;";
+    const addBtn = document.createElement("button");
+    addBtn.className = "icon-btn";
+    addBtn.textContent = "+ Adicionar opção";
+    addBtn.onclick = () => addOption(currentKey);
+    actionsRow.appendChild(addBtn);
+    if (path.length > 1) {
+      const del = document.createElement("button");
+      del.className = "icon-btn danger";
+      del.textContent = "Excluir este item";
+      del.onclick = deleteCurrentNode;
+      actionsRow.appendChild(del);
+    }
+    finalBlock.appendChild(actionsRow);
+  }
+
+  thread.appendChild(finalBlock);
+  content.appendChild(thread);
+
+  const actions = document.createElement("div");
+  actions.className = "bottom-actions";
+  if (path.length > 1) {
+    const back = document.createElement("button");
+    back.className = "nav-btn";
+    back.textContent = "← Voltar uma etapa";
+    back.onclick = () => { path.pop(); render(); };
+    actions.appendChild(back);
+  }
+  const restart = document.createElement("button");
+  restart.className = "nav-btn";
+  restart.textContent = "↻ Recomeçar";
+  restart.onclick = () => { path = ["root"]; render(); };
+  actions.appendChild(restart);
+  content.appendChild(actions);
+}
+
+function buildQuestionBubble(key, node) {
+  const bubble = document.createElement("div");
+  bubble.className = "bubble-q";
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex; align-items:center; gap:8px;";
+  const text = document.createElement("p");
+  text.className = "q-text";
+  text.textContent = node.q;
+  row.appendChild(text);
+  if (editMode) {
+    const editQ = document.createElement("button");
+    editQ.className = "icon-btn";
+    editQ.textContent = "Editar";
+    editQ.onclick = () => editQuestion(key);
+    row.appendChild(editQ);
+  }
+  bubble.appendChild(row);
+  return bubble;
+}
+
+function buildInfoBubble(key, node, isFinal) {
+  const bubble = document.createElement("div");
+  bubble.className = "bubble-info";
+  if (isFinal) {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = "Ação recomendada";
+    bubble.appendChild(tag);
+    bubble.appendChild(document.createElement("br"));
+  }
+  const body = document.createElement("span");
+  body.innerHTML = node.a;
+  bubble.appendChild(body);
+  if (editMode) {
+    bubble.appendChild(document.createElement("br"));
+    const editA = document.createElement("button");
+    editA.className = "icon-btn";
+    editA.style.marginTop = "10px";
+    editA.textContent = "Editar resposta";
+    editA.onclick = () => editAnswer(key);
+    bubble.appendChild(editA);
+  }
+  return bubble;
+}
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById("edit-toggle");
+  btn.textContent = editMode ? "Sair do modo de edição" : "Modo de edição";
+  btn.classList.toggle("active", editMode);
+  render();
+}
+
+function slugify(s) {
+  return (s || "item").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30) || "item";
+}
+
+function editQuestion(key) {
+  const node = tree[key];
+  const val = window.prompt("Editar pergunta:", node.q || "");
+  if (val !== null && val.trim() !== "") { node.q = val.trim(); render(); }
+}
+
+function editAnswer(key) {
+  const node = tree[key];
+  const val = window.prompt("Editar resposta (pode usar <br> para quebrar linha e <b>texto</b> para negrito):", node.a || "");
+  if (val !== null) { node.a = val; render(); }
+}
+
+function editOptionLabel(parentKey, idx) {
+  const opt = tree[parentKey].opts[idx];
+  const val = window.prompt("Editar texto da opção:", opt.label);
+  if (val !== null && val.trim() !== "") { opt.label = val.trim(); render(); }
+}
+
+function deleteOption(parentKey, idx) {
+  if (!window.confirm("Remover esta opção do menu? O conteúdo dela deixará de aparecer, mas isso não pode ser desfeito depois de baixar o arquivo.")) return;
+  tree[parentKey].opts.splice(idx, 1);
+  render();
+}
+
+function addOption(parentKey) {
+  const label = window.prompt("Texto da nova opção (o que o agente vai clicar):");
+  if (!label || !label.trim()) return;
+  const isBranch = window.confirm("Essa opção vai abrir MAIS perguntas (uma ramificação)?\n\nOK = sim, terá mais perguntas dentro.\nCancelar = não, isso já é a resposta final.");
+  let key = slugify(label);
+  let suffix = 1;
+  while (tree[key]) { suffix++; key = slugify(label) + "_" + suffix; }
+  if (isBranch) {
+    tree[key] = { q: "Nova pergunta — clique em Editar para escrever o texto", opts: [] };
+  } else {
+    const answerText = window.prompt("Digite o texto da resposta:") || "Clique em Editar resposta para escrever a orientação.";
+    tree[key] = { a: answerText };
+  }
+  if (!tree[parentKey].opts) tree[parentKey].opts = [];
+  tree[parentKey].opts.push({ label: label.trim(), to: key });
+  path.push(key);
+  render();
+}
+
+function deleteCurrentNode() {
+  if (path.length <= 1) return;
+  if (!window.confirm("Excluir este item e voltar para o anterior? Essa ação não pode ser desfeita depois de baixar o arquivo.")) return;
+  const key = path[path.length - 1];
+  const parentKey = path[path.length - 2];
+  const opts = tree[parentKey].opts || [];
+  const idx = opts.findIndex(o => o.to === key);
+  if (idx > -1) opts.splice(idx, 1);
+  delete tree[key];
+  path.pop();
+  render();
+}
+
+function downloadUpdatedHtml() {
+  try {
+    const treeJson = JSON.stringify(tree, null, 2);
+    const re = /const tree = \{[\s\S]*?\};(\s*\n\nlet path)/;
+    if (!re.test(ORIGINAL_HTML)) { alert("Não foi possível gerar o arquivo atualizado automaticamente."); return; }
+    const updatedHtml = ORIGINAL_HTML.replace(re, (m, tail) => "const tree = " + treeJson + ";" + tail);
+    const blob = new Blob(["<!DOCTYPE html>\n" + updatedHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "arvore-decisao-atendimento.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("Erro ao gerar o arquivo: " + e.message);
+  }
+}
+
+function search(term) {
+  term = term.trim().toLowerCase();
+  const content = document.getElementById("content");
+  const bc = document.getElementById("breadcrumb");
+  if (!term) { render(); return; }
+
+  bc.innerHTML = "";
+  const label = document.createElement("span");
+  label.textContent = "Resultados da busca";
+  bc.appendChild(label);
+
+  const matches = [];
+  Object.keys(tree).forEach(key => {
+    const node = tree[key];
+    const haystack = ((node.q || "") + " " + (node.a || "")).toLowerCase();
+    if (haystack.includes(term) && node.a) {
+      matches.push(key);
+    }
+  });
+
+  content.innerHTML = "";
+  if (matches.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "no-results";
+    empty.textContent = "Nenhum resultado encontrado.";
+    content.appendChild(empty);
+    return;
+  }
+
+  matches.forEach(key => {
+    const card = document.createElement("div");
+    card.className = "answer-card";
+    card.innerHTML = "<div style='font-weight:600;margin-bottom:6px;'>" + (findTitle(key)) + "</div>" + tree[key].a;
+    content.appendChild(card);
+  });
+}
+
+function findTitle(targetKey) {
+  for (const key of Object.keys(tree)) {
+    const opts = tree[key].opts || [];
+    const found = opts.find(o => o.to === targetKey);
+    if (found) return found.label;
+  }
+  return targetKey;
+}
+
+document.getElementById("search").addEventListener("input", (e) => search(e.target.value));
+
+function applyTheme(isDark) {
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+}
+
+if (window.matchMedia) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  applyTheme(media.matches);
+  media.addEventListener("change", (e) => applyTheme(e.matches));
+}
+
+render();
+</script>
+</body>
+</html>
