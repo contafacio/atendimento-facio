@@ -62,14 +62,18 @@
   header p { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); }
   #theme-toggle {
     flex-shrink: 0;
-    padding: 7px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 15px;
+    border-radius: 50%;
     border: 1px solid var(--border);
     background: var(--card-bg);
     color: var(--text-primary);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   #theme-toggle:hover { background: var(--card-hover-bg); }
   #edit-toggle {
@@ -193,7 +197,7 @@
     <p>Cadastro, Depósito, Transferência Automática, Bloqueio, Fraude, Inadimplência, Pagamento, Indicação, CT e CF</p>
   </div>
   <div style="display:flex; gap:8px; flex-shrink:0;">
-    <button id="theme-toggle" onclick="toggleThemeManual()" style="display:none;">Modo escuro</button>
+    <button id="theme-toggle" onclick="toggleThemeManual()" title="Alternar tema claro/escuro">🌙</button>
     <button id="edit-toggle" onclick="toggleEditMode()">Modo de edição</button>
   </div>
 </header>
@@ -209,10 +213,6 @@
 <script>
 const ORIGINAL_HTML = document.documentElement.outerHTML;
 let editMode = false;
-
-function isInsideIframe() {
-  try { return window.self !== window.top; } catch (e) { return true; }
-}
 
 function getUrlTheme() {
   const params = new URLSearchParams(window.location.search);
@@ -232,17 +232,22 @@ function storeTheme(t) {
   try { localStorage.setItem("facio-support-theme", t); } catch (e) { /* sem storage disponível, segue sem salvar */ }
 }
 
+function clearStoredTheme() {
+  try { localStorage.removeItem("facio-support-theme"); } catch (e) { /* sem storage disponível */ }
+}
+
+// Prioridade: 1) ?theme= na URL (fixa manualmente por quem colou o link no Notion)
+//             2) escolha manual salva no navegador (botão de alternância)
+//             3) tema do sistema operacional, ao vivo — é o que o Notion também
+//                segue quando a aparência dele está em "Usar configuração do sistema"
 function resolveTheme() {
-  const urlTheme = getUrlTheme();
-  if (urlTheme) return urlTheme;
-  if (isInsideIframe()) return getSystemTheme();
-  return getStoredTheme() || getSystemTheme();
+  return getUrlTheme() || getStoredTheme() || getSystemTheme();
 }
 
 function applyTheme(t) {
   document.documentElement.setAttribute("data-theme", t);
   const btn = document.getElementById("theme-toggle");
-  if (btn) btn.textContent = t === "dark" ? "Modo claro" : "Modo escuro";
+  if (btn) btn.textContent = t === "dark" ? "☀️" : "🌙";
 }
 
 function toggleThemeManual() {
@@ -253,9 +258,16 @@ function toggleThemeManual() {
 }
 
 applyTheme(resolveTheme());
-if (!isInsideIframe() && !getUrlTheme()) {
-  const toggleBtn = document.getElementById("theme-toggle");
-  if (toggleBtn) toggleBtn.style.display = "inline-block";
+
+// Se o sistema mudar de tema enquanto a página está aberta (ex: Notion em
+// "configuração do sistema" e a pessoa troca o tema do computador), acompanha
+// automaticamente — a não ser que exista uma escolha manual salva ou um
+// parâmetro fixo na URL, que sempre têm prioridade.
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    if (getUrlTheme() || getStoredTheme()) return;
+    applyTheme(e.matches ? "dark" : "light");
+  });
 }
 
 const tree = {
