@@ -60,7 +60,7 @@
     align-items: flex-start;
     gap: 12px;
     border-bottom: 1px solid var(--header-border);
-    max-width: 720px;
+    max-width: 1100px;
     margin: 0 auto;
   }
   header h1 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary); }
@@ -137,7 +137,7 @@
   .pill-btn:hover { background: var(--accent-code-bg); }
   .pill-edit-wrap { display: flex; align-items: center; gap: 4px; }
   .bottom-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
   #search {
     width: 100%;
     padding: 10px 14px;
@@ -1134,11 +1134,33 @@ function downloadUpdatedHtml() {
   }
 }
 
+function normalizeText(s) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function wordStem(w) {
+  return w.length > 5 ? w.slice(0, 5) : w;
+}
+
+function buildStems(term) {
+  const stems = [];
+  term.split(/\s+/).filter(Boolean).forEach(tok => {
+    if (tok.includes("_")) {
+      tok.split("_").filter(Boolean).forEach(part => stems.push(part));
+    } else {
+      stems.push(wordStem(tok));
+    }
+  });
+  return stems;
+}
+
 function search(term) {
-  term = term.trim().toLowerCase();
+  term = normalizeText(term.trim());
   const content = document.getElementById("content");
   const bc = document.getElementById("breadcrumb");
   if (!term) { render(); return; }
+
+  const stems = buildStems(term);
 
   bc.innerHTML = "";
   const label = document.createElement("span");
@@ -1148,8 +1170,9 @@ function search(term) {
   const matches = [];
   Object.keys(tree).forEach(key => {
     const node = tree[key];
-    const haystack = ((node.q || "") + " " + (node.a || "")).toLowerCase();
-    if (haystack.includes(term) && node.a) {
+    const haystack = normalizeText((node.q || "") + " " + (node.a || ""));
+    const matchesAllStems = stems.every(s => haystack.includes(s));
+    if (matchesAllStems && node.a) {
       matches.push(key);
     }
   });
