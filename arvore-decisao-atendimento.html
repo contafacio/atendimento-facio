@@ -1138,20 +1138,8 @@ function normalizeText(s) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function wordStem(w) {
-  return w.length > 5 ? w.slice(0, 5) : w;
-}
-
-function buildStems(term) {
-  const stems = [];
-  term.split(/\s+/).filter(Boolean).forEach(tok => {
-    if (tok.includes("_")) {
-      tok.split("_").filter(Boolean).forEach(part => stems.push(part));
-    } else {
-      stems.push(wordStem(tok));
-    }
-  });
-  return stems;
+function tokenize(s) {
+  return normalizeText(s).split(/[^a-z0-9]+/).filter(Boolean);
 }
 
 function search(term) {
@@ -1160,25 +1148,32 @@ function search(term) {
   const bc = document.getElementById("breadcrumb");
   if (!term) { render(); return; }
 
-  const stems = buildStems(term);
+  const words = tokenize(term).filter(w => w.length >= 3);
 
   bc.innerHTML = "";
   const label = document.createElement("span");
   label.textContent = "Resultados da busca";
   bc.appendChild(label);
 
-  const matches = [];
+  const exactMatches = [];
+  const relatedMatches = [];
   Object.keys(tree).forEach(key => {
     const node = tree[key];
-    const haystack = normalizeText((node.q || "") + " " + (node.a || ""));
-    const matchesAllStems = stems.every(s => haystack.includes(s));
-    if (matchesAllStems && node.a) {
-      matches.push(key);
+    if (!node.a) return;
+    const rawText = (node.q || "") + " " + (node.a || "");
+    const haystack = normalizeText(rawText);
+    if (haystack.includes(term)) {
+      exactMatches.push(key);
+    } else if (words.length) {
+      const haystackWords = tokenize(rawText);
+      if (words.every(w => haystackWords.includes(w))) {
+        relatedMatches.push(key);
+      }
     }
   });
 
   content.innerHTML = "";
-  if (matches.length === 0) {
+  if (exactMatches.length === 0 && relatedMatches.length === 0) {
     const empty = document.createElement("p");
     empty.className = "no-results";
     empty.textContent = "Nenhum resultado encontrado.";
@@ -1186,7 +1181,7 @@ function search(term) {
     return;
   }
 
-  matches.forEach(key => {
+  exactMatches.forEach(key => {
     const card = document.createElement("div");
     card.className = "answer-card";
     card.style.cursor = "pointer";
@@ -1197,6 +1192,27 @@ function search(term) {
     };
     content.appendChild(card);
   });
+
+  if (relatedMatches.length) {
+    const relLabel = document.createElement("p");
+    relLabel.style.cssText = "font-size:13px; color:var(--text-muted); margin:" + (exactMatches.length ? "18px" : "4px") + " 0 8px;";
+    relLabel.textContent = "Você também pode estar procurando por:";
+    content.appendChild(relLabel);
+
+    const relRow = document.createElement("div");
+    relRow.className = "pill-row";
+    relatedMatches.forEach(key => {
+      const btn = document.createElement("button");
+      btn.className = "pill-btn";
+      btn.textContent = findTitle(key);
+      btn.onclick = () => {
+        const p = findPathTo(key);
+        if (p) { path = p; render(); }
+      };
+      relRow.appendChild(btn);
+    });
+    content.appendChild(relRow);
+  }
 }
 
 function findPathTo(targetKey) {
